@@ -17,7 +17,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -36,7 +36,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -89,7 +89,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #4f6ef7 0%, #8b5cf6 50%, #ec4899 100%);
+            background: linear-gradient(135deg, #8B0000 0%, #B22222 50%, #DC143C 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -126,14 +126,14 @@
         }
 
         .form-section {
-            background: rgba(79, 110, 247, 0.1);
+            background: rgba(139, 0, 0, 0.1);
             border-radius: 15px;
             padding: 25px;
-            border: 2px solid rgba(79, 110, 247, 0.2);
+            border: 2px solid rgba(139, 0, 0, 0.2);
         }
 
         .section-title {
-            color: #4f6ef7;
+            color: #8B0000;
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 20px;
@@ -158,7 +158,7 @@
         .form-group textarea {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid rgba(139,0,0,0.3);
             border-radius: 10px;
             font-size: 14px;
             transition: all 0.3s ease;
@@ -169,8 +169,8 @@
         .form-group select:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #4f6ef7;
-            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
+            border-color: #8B0000;
+            box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.1);
         }
 
         .form-group textarea {
@@ -217,22 +217,22 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #4f6ef7, #8b5cf6);
+            background: linear-gradient(135deg, #8B0000, #DC143C);
             color: white;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(79, 110, 247, 0.3);
+            box-shadow: 0 10px 25px rgba(139, 0, 0, 0.3);
         }
 
         .btn-secondary {
-            background: #6b7280;
+            background: #8B0000;
             color: white;
         }
 
         .btn-secondary:hover {
-            background: #4b5563;
+            background: #B22222;
             transform: translateY(-2px);
         }
 
@@ -510,8 +510,8 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #4f6ef7;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -1102,18 +1102,18 @@
             <!-- หน้าค้นหาข้อมูล -->
             <div id="searchSection" style="display: none;">
                 <div style="background: rgba(79, 110, 247, 0.1); border-radius: 15px; padding: 25px; margin: 20px 0;">
-                    <h3 style="color: #4f6ef7; margin-bottom: 20px;">🔍 ค้นหาข้อมูลการกระทำผิด</h3>
+                    <h3 style="color: #8B0000; margin-bottom: 20px;">🔍 ค้นหาข้อมูลการกระทำผิด</h3>
                     
                     <!-- ฟอร์มค้นหา -->
                     <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 120px; gap: 15px; align-items: end;">
                             <div>
                                 <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ชื่อนักเรียน:</label>
-                                <input type="text" id="searchName" placeholder="กรอกชื่อที่ต้องการค้นหา" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                <input type="text" id="searchName" placeholder="กรอกชื่อที่ต้องการค้นหา" style="width: 100%; padding: 12px; border: 2px solid rgba(139,0,0,0.3); border-radius: 8px; font-size: 14px;">
                             </div>
                             <div>
                                 <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ชั้น:</label>
-                                <select id="searchClass" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                <select id="searchClass" style="width: 100%; padding: 12px; border: 2px solid rgba(139,0,0,0.3); border-radius: 8px; font-size: 14px;">
                                     <option value="">ทั้งหมด</option>
                                     <option value="ม.1">ม.1</option>
                                     <option value="ม.2">ม.2</option>
@@ -1125,7 +1125,7 @@
                             </div>
                             <div>
                                 <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ประเภทการกระทำผิด:</label>
-                                <select id="searchViolationType" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                <select id="searchViolationType" style="width: 100%; padding: 12px; border: 2px solid rgba(139,0,0,0.3); border-radius: 8px; font-size: 14px;">
                                     <option value="">ทั้งหมด</option>
                                     <option value="มาสายเรียน">มาสายเรียน</option>
                                     <option value="ขาดเรียน">ขาดเรียน</option>
@@ -1723,7 +1723,7 @@
                         </div>
                     `,
                     confirmButtonText: 'ลองใหม่',
-                    confirmButtonColor: '#4f6ef7'
+                    confirmButtonColor: '#8B0000'
                 }).then(() => {
                     location.reload();
                 });
@@ -1765,7 +1765,7 @@
                 showCancelButton: false,
                 showConfirmButton: true,
                 confirmButtonText: '🚀 เข้าสู่ระบบ',
-                confirmButtonColor: '#4f6ef7',
+                confirmButtonColor: '#8B0000',
                 allowOutsideClick: false,
                 allowEscapeKey: false,
                 width: '400px',
@@ -1944,7 +1944,7 @@
                 text: 'คุณต้องการออกจากระบบหรือไม่?',
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#4f6ef7',
+                confirmButtonColor: '#8B0000',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'ออกจากระบบ',
                 cancelButtonText: 'ยกเลิก'
@@ -2095,7 +2095,7 @@
             
             // แสดงข้อความกำลังโหลด
             document.getElementById('searchResults').innerHTML = 
-                '<div style="text-align: center; padding: 40px; color: #4f6ef7;"><div class="loading"></div><h4 style="margin-top: 15px;">กำลังโหลดข้อมูล...</h4></div>';
+                '<div style="text-align: center; padding: 40px; color: #8B0000;"><div class="loading"></div><h4 style="margin-top: 15px;">กำลังโหลดข้อมูล...</h4></div>';
             
             try {
                 const result = await readGoogleSheet(GOOGLE_CONFIG.SHEETS.DATA);
@@ -2171,7 +2171,7 @@
                         icon: 'info',
                         title: 'ไม่พบข้อมูล',
                         text: 'ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา',
-                        confirmButtonColor: '#4f6ef7'
+                        confirmButtonColor: '#8B0000'
                     });
                 }
             }
@@ -2198,7 +2198,7 @@
                         text: `แสดงข้อมูลทั้งหมด ${result.data.length} รายการ`,
                         timer: 1500,
                         showConfirmButton: false,
-                        iconColor: '#4f6ef7'
+                        iconColor: '#8B0000'
                     });
                 } else {
                     document.getElementById('searchResults').innerHTML = 
@@ -2207,7 +2207,7 @@
                         icon: 'info',
                         title: 'ไม่มีข้อมูล',
                         text: result.message || 'ยังไม่มีข้อมูลในระบบ',
-                        confirmButtonColor: '#4f6ef7'
+                        confirmButtonColor: '#8B0000'
                     });
                 }
             } catch (error) {
@@ -2229,7 +2229,7 @@
             
             let html = `
                 <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    <h4 style="color: #4f6ef7; margin-bottom: 20px; text-align: center;">
+                    <h4 style="color: #8B0000; margin-bottom: 20px; text-align: center;">
                         📊 ข้อมูลการกระทำผิดของนักเรียน (${students.length} รายการ)
                     </h4>
             `;
@@ -2243,11 +2243,11 @@
                     const bgColor = isEven ? '#f8fafc' : '#ffffff';
                     
                     html += `
-                        <div style="background: ${bgColor}; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #4f6ef7;">
+                        <div style="background: ${bgColor}; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #8B0000;">
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <!-- ข้อมูลนักเรียน -->
                                 <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                                    <h5 style="color: #4f6ef7; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
+                                    <h5 style="color: #8B0000; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
                                         👨‍🎓 ข้อมูลนักเรียน
                                     </h5>
                                     <div style="line-height: 1.6; font-size: 14px;">
@@ -2304,9 +2304,9 @@
                                         🖨️ ปริ้น
                                     </button>
                                     <button onclick="editRecord(${index})" 
-                                            style="background: #4f6ef7; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
-                                            onmouseover="this.style.background='#3b5cf0'" 
-                                            onmouseout="this.style.background='#4f6ef7'">
+                                            style="background: #8B0000; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#660000'" 
+                                            onmouseout="this.style.background='#8B0000'">
                                         ✏️ แก้ไข
                                     </button>
                                     <button onclick="deleteRecord(${index})" 
@@ -2369,8 +2369,8 @@
                 html: `
                     <div style="text-align: left; max-height: 500px; overflow-y: auto; padding: 10px;">
                         <!-- ข้อมูลนักเรียน -->
-                        <div style="background: #f8fafc; border: 2px solid #4f6ef7; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                            <h3 style="color: #4f6ef7; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <div style="background: #f8fafc; border: 2px solid #8B0000; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #8B0000; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                                 👨‍🎓 ข้อมูลนักเรียนผู้กระทำผิด
                             </h3>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
@@ -2406,8 +2406,8 @@
                         </div>
 
                         <!-- ข้อมูลผู้บันทึก -->
-                        <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                            <h3 style="color: #0ea5e9; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <div style="background: rgba(139,0,0,0.05); border: 2px solid #8B0000; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #8B0000; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                                 📝 ข้อมูลผู้บันทึก
                             </h3>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
@@ -2703,7 +2703,7 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <!-- ข้อมูลนักเรียน -->
                             <div>
-                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">คำนำหน้า:</label>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">คำนำหน้า:</label>
                                 <select id="edit-prefix" class="swal2-input" style="margin: 0; width: 100%;">
                                     <option value="">เลือกคำนำหน้า</option>
                                     <option value="เด็กชาย" ${(record['คำนำหน้า'] === 'เด็กชาย') ? 'selected' : ''}>เด็กชาย</option>
@@ -2713,14 +2713,14 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ชื่อ-สกุล:</label>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">ชื่อ-สกุล:</label>
                                 <input type="text" id="edit-name" class="swal2-input" value="${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}" style="margin: 0; width: 100%;" placeholder="กรอกชื่อ-สกุล">
                             </div>
                         </div>
                         
                         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <div>
-                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ชั้น:</label>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">ชั้น:</label>
                                 <select id="edit-class" class="swal2-input" style="margin: 0; width: 100%;">
                                     <option value="">เลือกชั้น</option>
                                     ${['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'].map(cls => 
@@ -2729,11 +2729,11 @@
                                 </select>
                             </div>
                             <div>
-                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ห้อง:</label>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">ห้อง:</label>
                                 <input type="text" id="edit-room" class="swal2-input" value="${record['ห้อง'] || ''}" style="margin: 0; width: 100%;" placeholder="เช่น 1, 2, 3">
                             </div>
                             <div>
-                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">เบอร์โทร:</label>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">เบอร์โทร:</label>
                                 <input type="tel" id="edit-phone" class="swal2-input" value="${record['เบอร์โทรศัพท์'] || ''}" style="margin: 0; width: 100%;" placeholder="0812345678">
                             </div>
                         </div>

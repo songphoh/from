@@ -970,9 +970,6 @@
                     <button class="btn" onclick="showSettingsModal()" style="background: #8B0000; color: white; font-size: 12px; padding: 8px 12px;">
                         ⚙️ ตั้งค่าระบบ
                     </button>
-                    <button class="btn" onclick="checkConfig()" style="background: #f59e0b; color: white; font-size: 12px; padding: 8px 12px;">
-                        🔧 ตรวจสอบการตั้งค่า
-                    </button>
                 </div>
             </div>
 
@@ -1037,14 +1034,33 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="actionTaken">ดำเนินการ</label>
-                                <select id="actionTaken" name="actionTaken" required>
-                                    <option value="">เลือกมาตรการ</option>
-                                    <option value="ตักเตือน">ตักเตือน</option>
-                                    <option value="ทัณฑ์บน">ทัณฑ์บน</option>
-                                    <option value="ตัดคะแนน">ตัดคะแนน</option>
-                                    <option value="เชิญผู้ปกครอง">เชิญผู้ปกครอง</option>
-                                </select>
+                                <label for="actionTaken">ดำเนินการ <span style="color: red;">*</span></label>
+                                <div style="background: #f9fafb; border: 2px solid rgba(139,0,0,0.2); border-radius: 8px; padding: 15px; margin-top: 5px;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                        <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(139,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="action-warn" name="actionTaken" value="ตักเตือน" style="margin-right: 8px; accent-color: #8B0000; transform: scale(1.2);">
+                                            <span style="font-weight: 500; color: #374151;">ตักเตือน</span>
+                                        </label>
+                                        
+                                        <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(139,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="action-punish" name="actionTaken" value="ทัณฑ์บน" style="margin-right: 8px; accent-color: #8B0000; transform: scale(1.2);">
+                                            <span style="font-weight: 500; color: #374151;">ทัณฑ์บน</span>
+                                        </label>
+                                        
+                                        <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(139,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="action-deduct" name="actionTaken" value="ตัดคะแนน" style="margin-right: 8px; accent-color: #8B0000; transform: scale(1.2);">
+                                            <span style="font-weight: 500; color: #374151;">ตัดคะแนน</span>
+                                        </label>
+                                        
+                                        <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border-radius: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(139,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                                            <input type="checkbox" id="action-parent" name="actionTaken" value="เชิญผู้ปกครอง" style="margin-right: 8px; accent-color: #8B0000; transform: scale(1.2);">
+                                            <span style="font-weight: 500; color: #374151;">เชิญผู้ปกครอง</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <small style="color: #6b7280; font-style: italic; margin-top: 5px; display: block;">
+                                    💡 สามารถเลือกได้มากกว่า 1 ตัวเลือก
+                                </small>
                             </div>
 
                             <div class="form-group">
@@ -1235,24 +1251,6 @@
         }
         
         // ตรวจสอบว่ามี config.js หรือไม่
-        function checkConfigurationStatus() {
-            const hasConfig = window.APP_CONFIG && window.APP_CONFIG.GOOGLE;
-            const hasUrlParams = new URLSearchParams(window.location.search).has('PROJECT_ID');
-            const hasEnvVars = window.ENV && window.ENV.PROJECT_ID;
-            
-            if (!hasConfig && !hasUrlParams && !hasEnvVars) {
-                console.warn('⚠️  No configuration found!');
-                console.warn('📋 Please ensure one of the following:');
-                console.warn('  1. Create config.js from config.example.js for local development');
-                console.warn('  2. Set Environment Variables for production deployment');
-                console.warn('  3. The config.js file is properly loaded');
-                
-                return false;
-            }
-            
-            return true;
-        }
-
         // *** การกำหนดค่า Google Sheets API (Service Account) ***
         const GOOGLE_CONFIG = {
             // Service Account Configuration - อ่านจาก Config หรือ Environment Variables
@@ -1401,7 +1399,7 @@
                     return { success: true, data: [] };
                 }
 
-                // Convert to objects
+                // Convert to objects - ใช้แถวแรกเป็น headers
                 const headers = values[0];
                 const dataRows = values.slice(1).map(row => {
                     const obj = {};
@@ -1518,7 +1516,7 @@
                 
                 // ตรวจสอบว่ามี header แล้วหรือไม่
                 const existingData = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:O1`,
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -1531,7 +1529,7 @@
 
                 // กำหนด headers สำหรับ sheet data ตามลำดับที่ถูกต้อง
                 const headers = [
-                    'Form_Response#', 'ประทับเวลา', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
+                    'ประทับเวลา', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
                     'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
                     'ตัดคะเนน (จำนวนคะแนน)', 'ข้อมูลผู้ปกครอง (มีคำนำหน้า)', 'เบอร์โทรศัพท์', 'เบอร์โทรผู้ปกครอง', 
                     'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)', 'ตำแหน่ง'
@@ -1540,7 +1538,7 @@
                 // ถ้าไม่มี header ให้เพิ่ม
                 if (!existingResult.values || existingResult.values.length === 0) {
                     await fetch(
-                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:O1?valueInputOption=RAW`,
+                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1?valueInputOption=RAW`,
                         {
                             method: 'PUT',
                             headers: {
@@ -1574,27 +1572,54 @@
                     return cleanPhone.startsWith('0') ? cleanPhone : ('0' + cleanPhone);
                 }
 
-                // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง (ไม่บันทึก Form_Response# เพราะเป็นแค่หัวตาราง)
+                // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง (เริ่มจากคอลัมน์ A = ประทับเวลา)
                 const row = [
-                    '',                                               // a. Form_Response# (ว่างเปล่าเพราะเป็นแค่หัวตาราง)
-                    new Date().toLocaleString('th-TH'),               // b. ประทับเวลา
-                    data.studentPrefix || '',                         // c. คำนำหน้า
-                    data.studentName || '',                           // d. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
-                    data.studentClass || '',                          // e. ชั้น
-                    data.studentRoom || '',                           // f. ห้อง
-                    data.violationType || '',                         // g. กรณีที่กระทำความผิด
-                    data.violationDate || '',                         // h. ว/ด/ป กระทำความผิด
-                    data.actionTaken || '',                           // i. ดำเนินการ
-                    data.pointsDeducted || '0',                       // j. ตัดคะเนน (จำนวนคะแนน)
-                    data.guardianName || '',                          // k. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
-                    "'" + formatPhoneNumber(data.studentPhone),       // l. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    "'" + formatPhoneNumber(data.guardianPhone),      // m. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    data.registeredBy || '',                          // n. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
-                    data.position || ''                               // o. ตำแหน่ง
+                    new Date().toLocaleString('th-TH'),               // a. ประทับเวลา  
+                    data.studentPrefix || '',                         // b. คำนำหน้า
+                    data.studentName || '',                           // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    data.studentClass || '',                          // d. ชั้น
+                    data.studentRoom || '',                           // e. ห้อง
+                    data.violationType || '',                         // f. กรณีที่กระทำความผิด
+                    data.violationDate || '',                         // g. ว/ด/ป กระทำความผิด
+                    data.actionTaken || '',                           // h. ดำเนินการ
+                    data.pointsDeducted || '0',                       // i. ตัดคะเนน (จำนวนคะแนน)
+                    data.guardianName || '',                          // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    "'" + formatPhoneNumber(data.studentPhone),       // k. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    "'" + formatPhoneNumber(data.guardianPhone),      // l. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    data.registeredBy || '',                          // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    data.position || ''                               // n. ตำแหน่ง
                 ];
 
+                console.log('🔍 Data mapping debug:');
+                console.log('Headers (Row 1):', headers);
+                console.log('Form data received:', data);
+                console.log('Row to be written (Row 2+):', row);
+                console.log('Mapping check:');
+                headers.forEach((header, index) => {
+                    console.log(`  Column ${String.fromCharCode(65 + index)} (${index}): "${header}" = "${row[index]}"`);
+                });
+
+                // ตรวจสอบความตรงกันของข้อมูล
+                const mappingCheck = {
+                    'ประทับเวลา': row[0],
+                    'คำนำหน้า': row[1],
+                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': row[2],
+                    'ชั้น': row[3],
+                    'ห้อง': row[4],
+                    'กรณีที่กระทำความผิด': row[5],
+                    'ว/ด/ป กระทำความผิด': row[6],
+                    'ดำเนินการ': row[7],
+                    'ตัดคะเนน (จำนวนคะแนน)': row[8],
+                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': row[9],
+                    'เบอร์โทรศัพท์': row[10],
+                    'เบอร์โทรผู้ปกครอง': row[11],
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': row[12],
+                    'ตำแหน่ง': row[13]
+                };
+                console.log('📊 Expected mapping:', mappingCheck);
+
                 const appendResponse = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A:O:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
                     {
                         method: 'POST',
                         headers: {
@@ -1676,16 +1701,6 @@
                 return;
             }
             
-            // ตรวจสอบการตั้งค่า Configuration
-            updateLoadingText('ตรวจสอบการตั้งค่า...');
-            const hasValidConfig = checkConfigurationStatus();
-            
-            if (!hasValidConfig) {
-                updateLoadingText('ไม่พบการตั้งค่า...');
-                showConfigurationError();
-                return;
-            }
-            
             // ทดสอบการเชื่อมต่อ Google Sheets API
             updateLoadingText('ทดสอบการเชื่อมต่อ Google Sheets...');
             try {
@@ -1731,59 +1746,6 @@
                     }, 500);
                 }, 300);
             }
-        }
-
-        // แสดงข้อผิดพลาดเมื่อไม่มีการตั้งค่า
-        function showConfigurationError() {
-            updateLoadingText('ไม่พบไฟล์การตั้งค่า');
-            setTimeout(() => {
-                hideLoadingScreen();
-                Swal.fire({
-                    icon: 'error',
-                    title: '⚙️ ไม่พบการตั้งค่าระบบ',
-                    html: `
-                        <div style="text-align: left; margin: 20px 0;">
-                            <p><strong>ไม่พบไฟล์ config.js หรือ Environment Variables</strong></p>
-                            
-                            <div style="margin: 20px 0; padding: 15px; background: #fee2e2; border-radius: 8px; border-left: 4px solid #dc2626;">
-                                <p><strong>📋 สำหรับการพัฒนาในเครื่อง (Local Development):</strong></p>
-                                <ol style="margin: 10px 0 10px 20px; line-height: 1.6;">
-                                    <li>คัดลอกไฟล์ <code>config.example.js</code> เป็น <code>config.js</code></li>
-                                    <li>แก้ไขค่าใน <code>config.js</code> ตามข้อมูลจริงของคุณ</li>
-                                    <li>ตรวจสอบว่าไฟล์ <code>config.js</code> ถูกโหลดก่อน <code>index.html</code></li>
-                                </ol>
-                            </div>
-                            
-                            <div style="margin: 20px 0; padding: 15px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
-                                <p><strong>🚀 สำหรับ Production (Render, Netlify, etc.):</strong></p>
-                                <ol style="margin: 10px 0 10px 20px; line-height: 1.6;">
-                                    <li>ตั้งค่า Environment Variables:</li>
-                                    <ul style="margin: 5px 0 5px 20px;">
-                                        <li><code>PROJECT_ID</code></li>
-                                        <li><code>PRIVATE_KEY_ID</code></li>
-                                        <li><code>PRIVATE_KEY</code></li>
-                                        <li><code>CLIENT_EMAIL</code></li>
-                                        <li><code>CLIENT_ID</code></li>
-                                        <li><code>SHEET_ID</code></li>
-                                    </ul>
-                                </ol>
-                            </div>
-                            
-                            <div style="margin: 20px 0; padding: 15px; background: #f3f4f6; border-radius: 8px;">
-                                <p style="margin: 0; font-size: 12px; color: #6b7280;">
-                                    💡 <strong>หมายเหตุ:</strong> ตรวจสอบ Console (F12) เพื่อดูข้อมูลเพิ่มเติม
-                                </p>
-                            </div>
-                        </div>
-                    `,
-                    confirmButtonText: 'ตรวจสอบอีกครั้ง',
-                    confirmButtonColor: '#dc2626',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                }).then(() => {
-                    location.reload();
-                });
-            }, 1000);
         }
 
         // แสดงโหมดออฟไลน์เมื่อไม่สามารถเชื่อมต่อ Google API ได้
@@ -2928,7 +2890,22 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <div>
                                     <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">การดำเนินการ:</label>
-                                    <textarea id="edit-action" class="swal2-input" style="margin: 0; width: 100%; min-height: 60px;" placeholder="ระบุการดำเนินการที่ได้ทำ">${record['ดำเนินการ'] || ''}</textarea>
+                                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px;">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                            ${(() => {
+                                                const currentActions = (record['ดำเนินการ'] || '').split(', ').filter(a => a.trim());
+                                                const actions = ['ตักเตือน', 'ทัณฑ์บน', 'ตัดคะแนน', 'เชิญผู้ปกครอง'];
+                                                return actions.map(action => `
+                                                    <label style="display: flex; align-items: center; cursor: pointer; padding: 4px;">
+                                                        <input type="checkbox" name="edit-actions" value="${action}" 
+                                                               ${currentActions.includes(action) ? 'checked' : ''} 
+                                                               style="margin-right: 6px; accent-color: #8B0000;">
+                                                        <span style="font-size: 13px;">${action}</span>
+                                                    </label>
+                                                `).join('');
+                                            })()}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">คะแนนที่ตัด:</label>
@@ -2969,7 +2946,10 @@
                         phone: document.getElementById('edit-phone').value,
                         violation: document.getElementById('edit-violation').value,
                         violationDate: document.getElementById('edit-violation-date').value,
-                        action: document.getElementById('edit-action').value,
+                        action: (() => {
+                            const checkedActions = document.querySelectorAll('input[name="edit-actions"]:checked');
+                            return Array.from(checkedActions).map(checkbox => checkbox.value).join(', ');
+                        })(),
                         points: document.getElementById('edit-points').value,
                         guardian: document.getElementById('edit-guardian').value,
                         guardianPhone: document.getElementById('edit-guardian-phone').value
@@ -3228,7 +3208,31 @@
             
             // รวบรวมข้อมูลจากฟอร์ม
             for (let [key, value] of formData.entries()) {
-                data[key] = value;
+                // จัดการ checkbox หลายตัวเลือกสำหรับ actionTaken
+                if (key === 'actionTaken') {
+                    if (!data[key]) {
+                        data[key] = [];
+                    }
+                    data[key].push(value);
+                } else {
+                    data[key] = value;
+                }
+            }
+            
+            // แปลง array ของ actionTaken เป็น string
+            if (Array.isArray(data.actionTaken)) {
+                data.actionTaken = data.actionTaken.join(', ');
+            }
+            
+            // ตรวจสอบว่ามีการเลือกดำเนินการอย่างน้อย 1 ตัวเลือก
+            if (!data.actionTaken || data.actionTaken.trim() === '') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณาเลือกการดำเนินการ',
+                    text: 'โปรดเลือกมาตรการดำเนินการอย่างน้อย 1 ตัวเลือก',
+                    confirmButtonColor: '#8B0000'
+                });
+                return;
             }
             
             // ฟังก์ชันจัดรูปแบบเบอร์โทรให้ถูกต้อง
@@ -3333,59 +3337,6 @@
             }
         }, 2000);
         
-        // *** ฟังก์ชันตรวจสอบการตั้งค่า ***
-        function checkConfig() {
-            const sheetId = GOOGLE_CONFIG.SHEET_ID;
-            const projectId = GOOGLE_CONFIG.PROJECT_ID;
-            const clientEmail = GOOGLE_CONFIG.CLIENT_EMAIL;
-            
-            let configInfo = `
-                <div style="text-align: left; padding: 20px;">
-                    <h3 style="color: #8B0000; margin-bottom: 15px;">🔧 การตั้งค่าปัจจุบัน</h3>
-                    
-                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <h4 style="color: #059669; margin-bottom: 10px;">📊 Google Sheets Configuration</h4>
-                        <div style="font-family: monospace; font-size: 12px; line-height: 1.6;">
-                            <div><strong>Sheet ID:</strong> ${sheetId}</div>
-                            <div><strong>Project ID:</strong> ${projectId}</div>
-                            <div><strong>Service Account:</strong> ${clientEmail}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <h4 style="color: #dc2626; margin-bottom: 10px;">⚠️ หากไม่มีข้อมูลใน Render</h4>
-                        <div style="font-size: 14px; line-height: 1.6;">
-                            <p><strong>วิธีแก้ไข:</strong></p>
-                            <ol>
-                                <li>เข้า Render Dashboard</li>
-                                <li>ไปที่ Environment Variables</li>
-                                <li>แก้ไข SHEET_ID เป็น: <code style="background: #f3f4f6; padding: 2px 4px; border-radius: 4px;">${sheetId}</code></li>
-                                <li>Save และ Redeploy</li>
-                            </ol>
-                        </div>
-                    </div>
-                    
-                    <div style="background: #dbeafe; padding: 15px; border-radius: 8px;">
-                        <h4 style="color: #2563eb; margin-bottom: 10px;">🚀 URL Parameter (ทดสอบด่วน)</h4>
-                        <div style="font-size: 14px;">
-                            <p>เพิ่มลงท้าย URL:</p>
-                            <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; display: block; word-break: break-all;">
-                                ?SHEET_ID=${sheetId}
-                            </code>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            Swal.fire({
-                title: 'ตรวจสอบการตั้งค่า',
-                html: configInfo,
-                width: '600px',
-                confirmButtonText: 'ปิด',
-                confirmButtonColor: '#8B0000'
-            });
-        }
-
         // *** ฟังก์ชันจัดการหน้าตั้งค่า ***
         function showSettingsModal() {
             if (!currentUser) {

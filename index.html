@@ -1445,11 +1445,11 @@
 
                 const existingResult = await existingData.json();
 
-                // กำหนด headers สำหรับ sheet data
+                // กำหนด headers สำหรับ sheet data ตามลำดับที่ถูกต้อง
                 const headers = [
                     'ประทับเวลา', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
-                    'เบอร์โทรศัพท์', 'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
-                    'ตัดคะแนน (จำนวนคะแนน)', 'ข้อมูลผู้ปกครอง (มีคำนำหน้า)', 'เบอร์โทรผู้ปกครอง', 
+                    'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
+                    'ตัดคะเนน (จำนวนคะแนน)', 'ข้อมูลผู้ปกครอง (มีคำนำหน้า)', 'เบอร์โทรศัพท์', 'เบอร์โทรผู้ปกครอง', 
                     'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)', 'ตำแหน่ง'
                 ];
 
@@ -1470,22 +1470,42 @@
                     );
                 }
 
-                // เพิ่มข้อมูลใหม่
+                // ฟังก์ชันแปลงเบอร์โทรให้มี 0 นำหน้าและเป็น Text format
+                function formatPhoneNumber(phone) {
+                    if (!phone) return '';
+                    // ลบอักขระที่ไม่ใช่ตัวเลข
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    // ถ้าไม่มี 0 นำหน้าและเป็นเบอร์ 9 หลัก ให้เพิ่ม 0
+                    if (cleanPhone.length === 9 && !cleanPhone.startsWith('0')) {
+                        return '0' + cleanPhone;
+                    }
+                    // ถ้าขึ้นต้นด้วย 66 ให้แปลงเป็น 0
+                    if (cleanPhone.startsWith('66') && cleanPhone.length === 11) {
+                        return '0' + cleanPhone.substring(2);
+                    }
+                    // ใส่ 0 หน้าเบอร์ถ้ายังไม่มี
+                    if (cleanPhone.length === 9) {
+                        return '0' + cleanPhone;
+                    }
+                    return cleanPhone.startsWith('0') ? cleanPhone : ('0' + cleanPhone);
+                }
+
+                // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง
                 const row = [
-                    new Date().toLocaleString('th-TH'),
-                    data.studentPrefix || '',
-                    data.studentName || '',
-                    data.studentClass || '',
-                    data.studentRoom || '',
-                    data.studentPhone || '',
-                    data.violationType || '',
-                    data.violationDate || '',
-                    data.actionTaken || '',
-                    data.pointsDeducted || '0',
-                    data.guardianName || '',
-                    data.guardianPhone || '',
-                    data.registeredBy || '',
-                    data.position || ''
+                    new Date().toLocaleString('th-TH'),           // a. ประทับเวลา
+                    data.studentPrefix || '',                     // b. คำนำหน้า
+                    data.studentName || '',                       // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    data.studentClass || '',                      // d. ชั้น
+                    data.studentRoom || '',                       // e. ห้อง
+                    data.violationType || '',                     // f. กรณีที่กระทำความผิด
+                    data.violationDate || '',                     // g. ว/ด/ป กระทำความผิด
+                    data.actionTaken || '',                       // h. ดำเนินการ
+                    data.pointsDeducted || '0',                   // i. ตัดคะเนน (จำนวนคะแนน)
+                    data.guardianName || '',                      // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    "'" + formatPhoneNumber(data.studentPhone),   // k. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    "'" + formatPhoneNumber(data.guardianPhone),  // l. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    data.registeredBy || '',                      // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    data.position || ''                           // n. ตำแหน่ง
                 ];
 
                 const appendResponse = await fetch(
@@ -2271,6 +2291,18 @@
                                     📅 บันทึกเมื่อ: ${student['ประทับเวลา'] || '-'}
                                 </div>
                                 <div style="display: flex; gap: 8px;">
+                                    <button onclick="viewRecord(${index})" 
+                                            style="background: #059669; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#047857'" 
+                                            onmouseout="this.style.background='#059669'">
+                                        👁️ ดูรายละเอียด
+                                    </button>
+                                    <button onclick="printRecord(${index})" 
+                                            style="background: #7c3aed; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#6d28d9'" 
+                                            onmouseout="this.style.background='#7c3aed'">
+                                        🖨️ ปริ้น
+                                    </button>
                                     <button onclick="editRecord(${index})" 
                                             style="background: #4f6ef7; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
                                             onmouseover="this.style.background='#3b5cf0'" 
@@ -2316,6 +2348,337 @@
         }
 
         // *** ฟังก์ชันจัดการรายการ ***
+
+        // ดูรายละเอียดรายการ
+        function viewRecord(index) {
+            if (!allStudentsData || index < 0 || index >= allStudentsData.length) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่พบข้อมูลที่ต้องการดู',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const record = allStudentsData[index];
+            const studentName = `${record['คำนำหน้า'] || ''} ${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}`.trim();
+
+            Swal.fire({
+                title: '👁️ รายละเอียดการกระทำผิด',
+                html: `
+                    <div style="text-align: left; max-height: 500px; overflow-y: auto; padding: 10px;">
+                        <!-- ข้อมูลนักเรียน -->
+                        <div style="background: #f8fafc; border: 2px solid #4f6ef7; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #4f6ef7; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                👨‍🎓 ข้อมูลนักเรียนผู้กระทำผิด
+                            </h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
+                                <div><strong>ชื่อ-นามสกุล:</strong><br><span style="color: #1f2937; font-size: 16px;">${studentName}</span></div>
+                                <div><strong>ชั้น:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ชั้น'] || '-'}</span></div>
+                                <div><strong>ห้อง:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ห้อง'] || '-'}</span></div>
+                                <div><strong>เบอร์โทรศัพท์:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['เบอร์โทรศัพท์'] || '-'}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลการกระทำผิด -->
+                        <div style="background: #fef2f2; border: 2px solid #dc2626; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #dc2626; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                ⚠️ ข้อมูลการกระทำผิด
+                            </h3>
+                            <div style="line-height: 1.8;">
+                                <div style="margin-bottom: 12px;"><strong>กรณีที่กระทำความผิด:</strong><br><span style="color: #dc2626; font-size: 16px; font-weight: bold;">${record['กรณีที่กระทำความผิด'] || '-'}</span></div>
+                                <div style="margin-bottom: 12px;"><strong>วันที่กระทำความผิด:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ว/ด/ป กระทำความผิด'] || '-'}</span></div>
+                                <div style="margin-bottom: 12px;"><strong>การดำเนินการ:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ดำเนินการ'] || '-'}</span></div>
+                                <div><strong>คะแนนที่ตัด:</strong><br><span style="color: #dc2626; font-size: 18px; font-weight: bold;">${record['ตัดคะเนน (จำนวนคะแนน)'] || '0'} คะแนน</span></div>
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลผู้ปกครอง -->
+                        <div style="background: #f0fdf4; border: 2px solid #059669; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #059669; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                👥 ข้อมูลผู้ปกครอง
+                            </h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
+                                <div><strong>ชื่อผู้ปกครอง:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ข้อมูลผู้ปกครอง (มีคำนำหน้า)'] || '-'}</span></div>
+                                <div><strong>เบอร์โทรผู้ปกครอง:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['เบอร์โทรผู้ปกครอง'] || '-'}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลผู้บันทึก -->
+                        <div style="background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                            <h3 style="color: #0ea5e9; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                                📝 ข้อมูลผู้บันทึก
+                            </h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
+                                <div><strong>ผู้ลงทะเบียน:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)'] || '-'}</span></div>
+                                <div><strong>ตำแหน่ง:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ตำแหน่ง'] || '-'}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- วันที่บันทึก -->
+                        <div style="background: #f9fafb; border: 1px solid #d1d5db; border-radius: 8px; padding: 15px; text-align: center;">
+                            <div style="color: #6b7280; font-size: 14px;">
+                                📅 <strong>วันที่บันทึก:</strong> ${record['ประทับเวลา'] || '-'}
+                            </div>
+                        </div>
+                    </div>
+                `,
+                width: '800px',
+                showCancelButton: false,
+                confirmButtonText: '🖨️ ปริ้นรายการนี้',
+                confirmButtonColor: '#7c3aed',
+                showDenyButton: true,
+                denyButtonText: '❌ ปิด',
+                denyButtonColor: '#6b7280',
+                focusConfirm: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    printRecord(index);
+                }
+            });
+        }
+
+        // ปริ้นรายการ
+        function printRecord(index) {
+            if (!allStudentsData || index < 0 || index >= allStudentsData.length) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่พบข้อมูลที่ต้องการปริ้น',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const record = allStudentsData[index];
+            const studentName = `${record['คำนำหน้า'] || ''} ${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}`.trim();
+            
+            // สร้างหน้าปริ้น
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="UTF-8">
+                    <title>รายงานการกระทำผิด - ${studentName}</title>
+                    <style>
+                        @media print {
+                            body { 
+                                font-family: 'Sarabun', 'TH SarabunPSK', Arial, sans-serif; 
+                                margin: 0; 
+                                padding: 20px; 
+                                line-height: 1.6; 
+                                color: #000;
+                            }
+                            .no-print { display: none !important; }
+                        }
+                        body {
+                            font-family: 'Sarabun', 'TH SarabunPSK', Arial, sans-serif;
+                            margin: 0;
+                            padding: 20px;
+                            line-height: 1.6;
+                            color: #333;
+                            background: white;
+                        }
+                        .header {
+                            text-align: center;
+                            border-bottom: 3px double #000;
+                            padding-bottom: 20px;
+                            margin-bottom: 30px;
+                        }
+                        .header h1 {
+                            font-size: 24px;
+                            font-weight: bold;
+                            margin: 0 0 10px 0;
+                            color: #000;
+                        }
+                        .header h2 {
+                            font-size: 18px;
+                            margin: 0;
+                            color: #666;
+                        }
+                        .section {
+                            margin-bottom: 25px;
+                            border: 1px solid #ddd;
+                            border-radius: 8px;
+                            padding: 20px;
+                        }
+                        .section-title {
+                            font-size: 16px;
+                            font-weight: bold;
+                            color: #000;
+                            margin-bottom: 15px;
+                            border-bottom: 1px solid #ddd;
+                            padding-bottom: 8px;
+                        }
+                        .data-row {
+                            display: flex;
+                            margin-bottom: 12px;
+                            border-bottom: 1px dotted #ccc;
+                            padding-bottom: 8px;
+                        }
+                        .data-label {
+                            font-weight: bold;
+                            width: 200px;
+                            flex-shrink: 0;
+                        }
+                        .data-value {
+                            flex: 1;
+                        }
+                        .highlight {
+                            background: #ffeb3b;
+                            padding: 2px 4px;
+                            border-radius: 3px;
+                        }
+                        .footer {
+                            margin-top: 40px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #666;
+                            border-top: 1px solid #ddd;
+                            padding-top: 20px;
+                        }
+                        .signature-section {
+                            margin-top: 40px;
+                            display: grid;
+                            grid-template-columns: 1fr 1fr;
+                            gap: 100px;
+                        }
+                        .signature-box {
+                            text-align: center;
+                            border: 1px solid #ddd;
+                            padding: 40px 20px;
+                            border-radius: 8px;
+                        }
+                        .print-btn {
+                            background: #7c3aed;
+                            color: white;
+                            border: none;
+                            padding: 12px 24px;
+                            border-radius: 6px;
+                            font-size: 16px;
+                            cursor: pointer;
+                            margin: 20px auto;
+                            display: block;
+                        }
+                        @page {
+                            margin: 1cm;
+                            size: A4;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>รายงานการกระทำผิดของนักเรียน</h1>
+                        <h2>ระบบบันทึกการกระทำผิดของนักเรียน</h2>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">👨‍🎓 ข้อมูลนักเรียนผู้กระทำผิด</div>
+                        <div class="data-row">
+                            <div class="data-label">ชื่อ-นามสกุล:</div>
+                            <div class="data-value"><strong>${studentName}</strong></div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">ชั้น:</div>
+                            <div class="data-value">${record['ชั้น'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">ห้อง:</div>
+                            <div class="data-value">${record['ห้อง'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">เบอร์โทรศัพท์:</div>
+                            <div class="data-value">${record['เบอร์โทรศัพท์'] || '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">⚠️ ข้อมูลการกระทำผิด</div>
+                        <div class="data-row">
+                            <div class="data-label">กรณีที่กระทำความผิด:</div>
+                            <div class="data-value"><span class="highlight"><strong>${record['กรณีที่กระทำความผิด'] || '-'}</strong></span></div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">วันที่กระทำความผิด:</div>
+                            <div class="data-value">${record['ว/ด/ป กระทำความผิด'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">การดำเนินการ:</div>
+                            <div class="data-value">${record['ดำเนินการ'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">คะแนนที่ตัด:</div>
+                            <div class="data-value"><strong style="color: #dc2626; font-size: 18px;">${record['ตัดคะเนน (จำนวนคะแนน)'] || '0'} คะแนน</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">👥 ข้อมูลผู้ปกครอง</div>
+                        <div class="data-row">
+                            <div class="data-label">ชื่อผู้ปกครอง:</div>
+                            <div class="data-value">${record['ข้อมูลผู้ปกครอง (มีคำนำหน้า)'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">เบอร์โทรผู้ปกครอง:</div>
+                            <div class="data-value">${record['เบอร์โทรผู้ปกครอง'] || '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">📝 ข้อมูลผู้บันทึก</div>
+                        <div class="data-row">
+                            <div class="data-label">ชื่อผู้ลงทะเบียน:</div>
+                            <div class="data-value">${record['ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">ตำแหน่ง:</div>
+                            <div class="data-value">${record['ตำแหน่ง'] || '-'}</div>
+                        </div>
+                        <div class="data-row">
+                            <div class="data-label">วันที่บันทึก:</div>
+                            <div class="data-value">${record['ประทับเวลา'] || '-'}</div>
+                        </div>
+                    </div>
+
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div style="margin-bottom: 60px;">ลายเซ็นผู้ปกครอง</div>
+                            <div>................................</div>
+                            <div style="margin-top: 10px;">วันที่ ....../....../......</div>
+                        </div>
+                        <div class="signature-box">
+                            <div style="margin-bottom: 60px;">ลายเซ็นผู้รับผิดชอบ</div>
+                            <div>................................</div>
+                            <div style="margin-top: 10px;">วันที่ ....../....../......</div>
+                        </div>
+                    </div>
+
+                    <div class="footer">
+                        <div>รายงานนี้ออกจากระบบบันทึกการกระทำผิดของนักเรียน</div>
+                        <div>วันที่พิมพ์: ${new Date().toLocaleString('th-TH')}</div>
+                    </div>
+
+                    <button class="print-btn no-print" onclick="window.print()">🖨️ พิมพ์รายงาน</button>
+                </body>
+                </html>
+            `;
+
+            // เปิดหน้าต่างใหม่และแสดงเนื้อหา
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            // แสดงข้อความยืนยัน
+            Swal.fire({
+                icon: 'success',
+                title: '🖨️ เตรียมพร้อมปริ้น!',
+                text: 'เอกสารพร้อมสำหรับการปริ้นแล้ว',
+                timer: 2000,
+                showConfirmButton: false,
+                iconColor: '#7c3aed'
+            });
+        }
 
         // แก้ไขรายการ
         async function editRecord(index) {
@@ -2521,22 +2884,38 @@
                 // คำนวณแถวใน Google Sheets (index + 2 เพราะ index 0 = แถว 2, แถว 1 คือ header)
                 const rowNumber = index + 2;
                 
-                // สร้างข้อมูลที่จะอัปเดต
+                // ฟังก์ชันแปลงเบอร์โทรให้มี 0 นำหน้า (ใช้ซ้ำ)
+                function formatPhoneNumber(phone) {
+                    if (!phone) return '';
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    if (cleanPhone.length === 9 && !cleanPhone.startsWith('0')) {
+                        return '0' + cleanPhone;
+                    }
+                    if (cleanPhone.startsWith('66') && cleanPhone.length === 11) {
+                        return '0' + cleanPhone.substring(2);
+                    }
+                    if (cleanPhone.length === 9) {
+                        return '0' + cleanPhone;
+                    }
+                    return cleanPhone.startsWith('0') ? cleanPhone : ('0' + cleanPhone);
+                }
+
+                // สร้างข้อมูลที่จะอัปเดตตามลำดับคอลัมน์ที่ถูกต้อง
                 const updateData = [
-                    allStudentsData[index]['ประทับเวลา'] || new Date().toLocaleString('th-TH'), // เก็บเวลาเดิม
-                    formData.prefix,
-                    formData.name,
-                    formData.class,
-                    formData.room,
-                    formData.phone,
-                    formData.violation,
-                    formData.violationDate,
-                    formData.action,
-                    formData.points,
-                    formData.guardian,
-                    formData.guardianPhone,
-                    currentUser ? currentUser.fullName || currentUser.username : 'ระบบ',
-                    currentUser ? currentUser.role : 'ผู้ใช้'
+                    allStudentsData[index]['ประทับเวลา'] || new Date().toLocaleString('th-TH'), // a. ประทับเวลา (เก็บเวลาเดิม)
+                    formData.prefix,                                                              // b. คำนำหน้า
+                    formData.name,                                                                // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    formData.class,                                                               // d. ชั้น
+                    formData.room,                                                                // e. ห้อง
+                    formData.violation,                                                           // f. กรณีที่กระทำความผิด
+                    formData.violationDate,                                                       // g. ว/ด/ป กระทำความผิด
+                    formData.action,                                                              // h. ดำเนินการ
+                    formData.points,                                                              // i. ตัดคะเนน (จำนวนคะแนน)
+                    formData.guardian,                                                            // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    "'" + formatPhoneNumber(formData.phone),                                      // k. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    "'" + formatPhoneNumber(formData.guardianPhone),                              // l. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    currentUser ? currentUser.fullName || currentUser.username : 'ระบบ',        // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    currentUser ? currentUser.role : 'ผู้ใช้'                                     // n. ตำแหน่ง
                 ];
 
                 // อัปเดตใน Google Sheets
@@ -2558,22 +2937,22 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                // อัปเดตข้อมูลใน cache
+                // อัปเดตข้อมูลใน cache ตามลำดับคอลัมน์ที่ถูกต้อง
                 allStudentsData[index] = {
-                    'ประทับเวลา': updateData[0],
-                    'คำนำหน้า': updateData[1],
-                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': updateData[2],
-                    'ชั้น': updateData[3],
-                    'ห้อง': updateData[4],
-                    'เบอร์โทรศัพท์': updateData[5],
-                    'กรณีที่กระทำความผิด': updateData[6],
-                    'ว/ด/ป กระทำความผิด': updateData[7],
-                    'ดำเนินการ': updateData[8],
-                    'ตัดคะเนน (จำนวนคะแนน)': updateData[9],
-                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': updateData[10],
-                    'เบอร์โทรผู้ปกครอง': updateData[11],
-                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': updateData[12],
-                    'ตำแหน่ง': updateData[13]
+                    'ประทับเวลา': updateData[0],                           // a. ประทับเวลา
+                    'คำนำหน้า': updateData[1],                             // b. คำนำหน้า
+                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': updateData[2],       // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    'ชั้น': updateData[3],                                 // d. ชั้น
+                    'ห้อง': updateData[4],                                 // e. ห้อง
+                    'กรณีที่กระทำความผิด': updateData[5],                   // f. กรณีที่กระทำความผิด
+                    'ว/ด/ป กระทำความผิด': updateData[6],                   // g. ว/ด/ป กระทำความผิด
+                    'ดำเนินการ': updateData[7],                            // h. ดำเนินการ
+                    'ตัดคะเนน (จำนวนคะแนน)': updateData[8],                // i. ตัดคะเนน (จำนวนคะแนน)
+                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': updateData[9],          // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    'เบอร์โทรศัพท์': updateData[10],                       // k. เบอร์โทรศัพท์
+                    'เบอร์โทรผู้ปกครอง': updateData[11],                   // l. เบอร์โทรผู้ปกครอง
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': updateData[12], // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    'ตำแหน่ง': updateData[13]                              // n. ตำแหน่ง
                 };
 
                 // รีเฟรชการแสดงผล
@@ -2682,12 +3061,32 @@
                 data[key] = value;
             }
             
-            // จัดรูปแบบเบอร์โทรศัพท์ให้เป็นตัวเลขอย่างเดียว
+            // ฟังก์ชันจัดรูปแบบเบอร์โทรให้ถูกต้อง
+            function formatPhoneForSubmit(phone) {
+                if (!phone) return '';
+                // ลบอักขระที่ไม่ใช่ตัวเลข
+                const cleanPhone = phone.replace(/\D/g, '');
+                // ถ้าไม่มี 0 นำหน้าและเป็นเบอร์ 9 หลัก ให้เพิ่ม 0
+                if (cleanPhone.length === 9 && !cleanPhone.startsWith('0')) {
+                    return '0' + cleanPhone;
+                }
+                // ถ้าขึ้นต้นด้วย 66 ให้แปลงเป็น 0
+                if (cleanPhone.startsWith('66') && cleanPhone.length === 11) {
+                    return '0' + cleanPhone.substring(2);
+                }
+                // ใส่ 0 หน้าเบอร์ถ้ายังไม่มี
+                if (cleanPhone.length === 9) {
+                    return '0' + cleanPhone;
+                }
+                return cleanPhone.startsWith('0') ? cleanPhone : ('0' + cleanPhone);
+            }
+
+            // จัดรูปแบบเบอร์โทรศัพท์ให้ถูกต้อง
             if (data.studentPhone) {
-                data.studentPhone = data.studentPhone.replace(/\D/g, ''); // เอาเฉพาะตัวเลข
+                data.studentPhone = formatPhoneForSubmit(data.studentPhone);
             }
             if (data.guardianPhone) {
-                data.guardianPhone = data.guardianPhone.replace(/\D/g, ''); // เอาเฉพาะตัวเลข
+                data.guardianPhone = formatPhoneForSubmit(data.guardianPhone);
             }
             
             // เพิ่มข้อมูลเวลาและผู้บันทึก

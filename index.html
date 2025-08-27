@@ -1725,27 +1725,20 @@
                             <input type="password" id="swal-password" class="swal2-input" placeholder="กรอกรหัสผ่าน" style="margin: 0; width: 100%; box-sizing: border-box;">
                         </div>
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                            <h4 style="color: #4f6ef7; margin-bottom: 10px; font-size: 14px;">🎭 บัญชีทดสอบ:</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
-                                <button type="button" onclick="fillDemoAccount('admin', 'admin123')" class="demo-account-btn">
-                                    👤 admin / admin123
-                                </button>
-                                <button type="button" onclick="fillDemoAccount('teacher', 'teacher123')" class="demo-account-btn">
-                                    🏫 teacher / teacher123
-                                </button>
-                            </div>
+                            <h4 style="color: #4f6ef7; margin-bottom: 10px; font-size: 14px;">⚙️ การตั้งค่าระบบ:</h4>
                             <div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 11px; text-align: left;">
                                 <strong>⚙️ การตั้งค่า Google Sheets (Service Account):</strong><br>
                                 <strong>Sheet "Login":</strong> username | password | role | full_name | status<br>
                                 <strong>Sheet "data":</strong> สำหรับเก็บข้อมูลการกระทำผิด<br><br>
                                 
                                 <strong>🔧 ใส่ Google Sheet ID:</strong><br>
-                                แก้ไขค่า SHEET_ID ในไฟล์ HTML<br><br>
+                                แก้ไขค่า SHEET_ID ในไฟล์ config.js หรือตั้งค่า Environment Variables<br><br>
                                 
                                 <strong>ตัวอย่างข้อมูลใน Sheet "Login":</strong><br>
                                 <div style="font-family: monospace; background: #f5f5f5; padding: 5px; margin: 5px 0; font-size: 10px;">
-                                admin | admin123 | ผู้ดูแลระบบ | ผู้ดูแลระบบ | active<br>
-                                teacher | teacher123 | ครู | ครูผู้สอน | active
+                                username | password | role | full_name | status<br>
+                                admin | your_password | ผู้ดูแลระบบ | ผู้ดูแลระบบ | active<br>
+                                teacher | your_password | ครู | ครูผู้สอน | active
                                 </div>
                             </div>
                         </div>
@@ -1808,12 +1801,6 @@
                     usernameInput.focus();
                 }
             }, 100);
-        }
-
-        // กรอกบัญชีทดสอบ
-        function fillDemoAccount(username, password) {
-            document.getElementById('swal-username').value = username;
-            document.getElementById('swal-password').value = password;
         }
 
         // แสดงฟอร์มหลักโดยไม่ต้องล็อกอิน (แต่ปิดการใช้งาน)

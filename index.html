@@ -967,6 +967,12 @@
                     <button class="btn btn-secondary" onclick="showSearch()">
                         🔍 ค้นหาข้อมูล
                     </button>
+                    <button class="btn" onclick="showSettingsModal()" style="background: #8B0000; color: white; font-size: 12px; padding: 8px 12px;">
+                        ⚙️ ตั้งค่าระบบ
+                    </button>
+                    <button class="btn" onclick="checkConfig()" style="background: #f59e0b; color: white; font-size: 12px; padding: 8px 12px;">
+                        🔧 ตรวจสอบการตั้งค่า
+                    </button>
                 </div>
             </div>
 
@@ -1456,7 +1462,53 @@
             }
         }
 
-        // เขียนข้อมูลลง Google Sheets
+        // *** ฟังก์ชันโหลดการตั้งค่าจาก localStorage ***
+        function loadCustomSettings() {
+            try {
+                const localSettings = JSON.parse(localStorage.getItem('googleSheetsConfig') || '{}');
+                
+                if (Object.keys(localSettings).length > 0) {
+                    console.log('🔧 โหลดการตั้งค่าจาก localStorage:', localSettings);
+                    
+                    // อัปเดต GOOGLE_CONFIG ด้วยค่าจาก localStorage
+                    if (localSettings.SHEET_ID) GOOGLE_CONFIG.SHEET_ID = localSettings.SHEET_ID;
+                    if (localSettings.PROJECT_ID) GOOGLE_CONFIG.PROJECT_ID = localSettings.PROJECT_ID;
+                    if (localSettings.CLIENT_EMAIL) GOOGLE_CONFIG.CLIENT_EMAIL = localSettings.CLIENT_EMAIL;
+                    if (localSettings.PRIVATE_KEY) GOOGLE_CONFIG.PRIVATE_KEY = localSettings.PRIVATE_KEY;
+                    if (localSettings.DATA_SHEET) GOOGLE_CONFIG.SHEETS.DATA = localSettings.DATA_SHEET;
+                    if (localSettings.LOGIN_SHEET) GOOGLE_CONFIG.SHEETS.LOGIN = localSettings.LOGIN_SHEET;
+                    
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error loading custom settings:', error);
+                return false;
+            }
+        }
+
+        // โหลดการตั้งค่าเมื่อเริ่มต้น
+        document.addEventListener('DOMContentLoaded', function() {
+            // โหลดการตั้งค่าจาก localStorage ก่อน
+            const hasCustomSettings = loadCustomSettings();
+            
+            if (hasCustomSettings) {
+                console.log('✅ ใช้การตั้งค่าจาก localStorage');
+            } else {
+                console.log('📁 ใช้การตั้งค่าเริ่มต้น');
+            }
+            
+            // ตั้งค่า pagination
+            const itemsPerPageSelect = document.getElementById('itemsPerPage');
+            if (itemsPerPageSelect) {
+                itemsPerPageSelect.addEventListener('change', function() {
+                    itemsPerPage = parseInt(this.value);
+                    currentPage = 1;
+                    displaySearchResults(filteredStudentsData);
+                    updatePaginationControls();
+                });
+            }
+        });
         async function writeToGoogleSheet(data, sheetName = null) {
             try {
                 const token = await getServiceAccountToken();
@@ -2223,19 +2275,6 @@
                 paginationControls.style.display = 'none';
             }
         }
-
-        // *** เพิ่มการรับฟังการเปลี่ยนแปลงจำนวนรายการต่อหน้า ***
-        document.addEventListener('DOMContentLoaded', function() {
-            const itemsPerPageSelect = document.getElementById('itemsPerPage');
-            if (itemsPerPageSelect) {
-                itemsPerPageSelect.addEventListener('change', function() {
-                    itemsPerPage = parseInt(this.value);
-                    currentPage = 1;
-                    displaySearchResults(filteredStudentsData);
-                    updatePaginationControls();
-                });
-            }
-        });
 
         // ค้นหาข้อมูลนักเรียน (ปรับให้กรองจากข้อมูลที่มีแล้ว)
         function searchStudents() {
@@ -3294,6 +3333,306 @@
             }
         }, 2000);
         
+        // *** ฟังก์ชันตรวจสอบการตั้งค่า ***
+        function checkConfig() {
+            const sheetId = GOOGLE_CONFIG.SHEET_ID;
+            const projectId = GOOGLE_CONFIG.PROJECT_ID;
+            const clientEmail = GOOGLE_CONFIG.CLIENT_EMAIL;
+            
+            let configInfo = `
+                <div style="text-align: left; padding: 20px;">
+                    <h3 style="color: #8B0000; margin-bottom: 15px;">🔧 การตั้งค่าปัจจุบัน</h3>
+                    
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="color: #059669; margin-bottom: 10px;">📊 Google Sheets Configuration</h4>
+                        <div style="font-family: monospace; font-size: 12px; line-height: 1.6;">
+                            <div><strong>Sheet ID:</strong> ${sheetId}</div>
+                            <div><strong>Project ID:</strong> ${projectId}</div>
+                            <div><strong>Service Account:</strong> ${clientEmail}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="color: #dc2626; margin-bottom: 10px;">⚠️ หากไม่มีข้อมูลใน Render</h4>
+                        <div style="font-size: 14px; line-height: 1.6;">
+                            <p><strong>วิธีแก้ไข:</strong></p>
+                            <ol>
+                                <li>เข้า Render Dashboard</li>
+                                <li>ไปที่ Environment Variables</li>
+                                <li>แก้ไข SHEET_ID เป็น: <code style="background: #f3f4f6; padding: 2px 4px; border-radius: 4px;">${sheetId}</code></li>
+                                <li>Save และ Redeploy</li>
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #dbeafe; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #2563eb; margin-bottom: 10px;">🚀 URL Parameter (ทดสอบด่วน)</h4>
+                        <div style="font-size: 14px;">
+                            <p>เพิ่มลงท้าย URL:</p>
+                            <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; display: block; word-break: break-all;">
+                                ?SHEET_ID=${sheetId}
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            Swal.fire({
+                title: 'ตรวจสอบการตั้งค่า',
+                html: configInfo,
+                width: '600px',
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#8B0000'
+            });
+        }
+
+        // *** ฟังก์ชันจัดการหน้าตั้งค่า ***
+        function showSettingsModal() {
+            if (!currentUser) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่มีสิทธิ์เข้าถึง',
+                    text: 'กรุณาเข้าสู่ระบบก่อนเข้าใช้หน้าตั้งค่า',
+                    confirmButtonColor: '#8B0000'
+                });
+                return;
+            }
+
+            const currentSettings = getCurrentSettings();
+
+            Swal.fire({
+                title: '⚙️ ตั้งค่าระบบ',
+                html: `
+                    <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+                        <div style="background: rgba(139,0,0,0.05); border: 2px solid rgba(139,0,0,0.2); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                            <h4 style="color: #8B0000; margin-bottom: 15px; text-align: center;">📊 การตั้งค่า Google Sheets</h4>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Google Sheet ID:</label>
+                                <input type="text" id="settingsSheetId" value="${currentSettings.SHEET_ID || ''}" 
+                                       placeholder="1ONKBgNBfxGFhfiG9l8JSUjNfxiprjNA5PCTYkdy3DWM" 
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Project ID:</label>
+                                <input type="text" id="settingsProjectId" value="${currentSettings.PROJECT_ID || ''}" 
+                                       placeholder="webapp-from" 
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                                <div>
+                                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">ชื่อ Sheet ข้อมูล:</label>
+                                    <input type="text" id="settingsDataSheet" value="${currentSettings.DATA_SHEET || 'data'}" 
+                                           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">ชื่อ Sheet ผู้ใช้:</label>
+                                    <input type="text" id="settingsLoginSheet" value="${currentSettings.LOGIN_SHEET || 'login'}" 
+                                           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Service Account Email:</label>
+                                <input type="text" id="settingsClientEmail" value="${currentSettings.CLIENT_EMAIL || ''}" 
+                                       placeholder="webapp-from@webapp-from.iam.gserviceaccount.com" 
+                                       style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px;">
+                            </div>
+                            
+                            <div style="margin-bottom: 10px;">
+                                <label style="display: block; font-weight: bold; margin-bottom: 5px;">Private Key:</label>
+                                <textarea id="settingsPrivateKey" placeholder="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----" 
+                                          rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 11px; resize: vertical;">${currentSettings.PRIVATE_KEY || ''}</textarea>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #dbeafe; border: 1px solid #93c5fd; border-radius: 8px; padding: 10px; margin-top: 15px;">
+                            <h5 style="color: #1d4ed8; margin-bottom: 8px; text-align: center;">💡 คำแนะนำการใช้งาน</h5>
+                            <ul style="margin: 0; padding-left: 20px; color: #1e40af; font-size: 12px; line-height: 1.4;">
+                                <li>การตั้งค่าจะถูกเก็บใน Local Storage ของเบราว์เซอร์</li>
+                                <li>ใน Production ควรใช้ Environment Variables แทน</li>
+                                <li>Service Account ต้องมีสิทธิ์ Editor ใน Google Sheet</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                width: '800px',
+                showCancelButton: true,
+                showDenyButton: true,
+                confirmButtonText: '💾 บันทึก',
+                denyButtonText: '🔗 ทดสอบการเชื่อมต่อ',
+                cancelButtonText: '❌ ปิด',
+                confirmButtonColor: '#8B0000',
+                denyButtonColor: '#7c3aed',
+                cancelButtonColor: '#6b7280',
+                preConfirm: () => {
+                    return saveSettingsFromModal();
+                }
+            }).then((result) => {
+                if (result.isDenied) {
+                    testConnectionFromModal();
+                }
+            });
+        }
+
+        function getCurrentSettings() {
+            const localSettings = JSON.parse(localStorage.getItem('googleSheetsConfig') || '{}');
+            return {
+                SHEET_ID: localSettings.SHEET_ID || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.SHEET_ID : ''),
+                PROJECT_ID: localSettings.PROJECT_ID || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.PROJECT_ID : ''),
+                DATA_SHEET: localSettings.DATA_SHEET || (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.SHEETS ? GOOGLE_CONFIG.SHEETS.DATA : 'data'),
+                LOGIN_SHEET: localSettings.LOGIN_SHEET || (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.SHEETS ? GOOGLE_CONFIG.SHEETS.LOGIN : 'login'),
+                CLIENT_EMAIL: localSettings.CLIENT_EMAIL || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.CLIENT_EMAIL : ''),
+                PRIVATE_KEY: localSettings.PRIVATE_KEY || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.PRIVATE_KEY : '')
+            };
+        }
+
+        function saveSettingsFromModal() {
+            try {
+                const newSettings = {
+                    SHEET_ID: document.getElementById('settingsSheetId').value.trim(),
+                    PROJECT_ID: document.getElementById('settingsProjectId').value.trim(),
+                    DATA_SHEET: document.getElementById('settingsDataSheet').value.trim() || 'data',
+                    LOGIN_SHEET: document.getElementById('settingsLoginSheet').value.trim() || 'login',
+                    CLIENT_EMAIL: document.getElementById('settingsClientEmail').value.trim(),
+                    PRIVATE_KEY: document.getElementById('settingsPrivateKey').value.trim()
+                };
+
+                // ตรวจสอบฟิลด์จำเป็น
+                if (!newSettings.SHEET_ID || !newSettings.PROJECT_ID || !newSettings.CLIENT_EMAIL || !newSettings.PRIVATE_KEY) {
+                    Swal.showValidationMessage('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    return false;
+                }
+
+                // บันทึกลง localStorage
+                localStorage.setItem('googleSheetsConfig', JSON.stringify(newSettings));
+
+                // อัปเดต GOOGLE_CONFIG ถ้ามี
+                if (typeof GOOGLE_CONFIG !== 'undefined') {
+                    GOOGLE_CONFIG.SHEET_ID = newSettings.SHEET_ID;
+                    GOOGLE_CONFIG.PROJECT_ID = newSettings.PROJECT_ID;
+                    GOOGLE_CONFIG.CLIENT_EMAIL = newSettings.CLIENT_EMAIL;
+                    GOOGLE_CONFIG.PRIVATE_KEY = newSettings.PRIVATE_KEY;
+                    if (GOOGLE_CONFIG.SHEETS) {
+                        GOOGLE_CONFIG.SHEETS.DATA = newSettings.DATA_SHEET;
+                        GOOGLE_CONFIG.SHEETS.LOGIN = newSettings.LOGIN_SHEET;
+                    }
+                }
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ!',
+                    text: 'การตั้งค่าใหม่ได้รับการบันทึกแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    iconColor: '#059669'
+                });
+
+                return true;
+
+            } catch (error) {
+                console.error('Save settings error:', error);
+                Swal.showValidationMessage('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า');
+                return false;
+            }
+        }
+
+        async function testConnectionFromModal() {
+            // อัปเดตการตั้งค่าชั่วคราวสำหรับการทดสอบ
+            const tempSettings = {
+                SHEET_ID: document.getElementById('settingsSheetId').value.trim(),
+                PROJECT_ID: document.getElementById('settingsProjectId').value.trim(),
+                CLIENT_EMAIL: document.getElementById('settingsClientEmail').value.trim(),
+                PRIVATE_KEY: document.getElementById('settingsPrivateKey').value.trim()
+            };
+
+            if (!tempSettings.SHEET_ID || !tempSettings.PROJECT_ID || !tempSettings.CLIENT_EMAIL || !tempSettings.PRIVATE_KEY) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกข้อมูลให้ครบถ้วนก่อนทดสอบการเชื่อมต่อ',
+                    confirmButtonColor: '#f59e0b'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังทดสอบการเชื่อมต่อ...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                willOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                // อัปเดต GOOGLE_CONFIG ชั่วคราว
+                const originalConfig = { ...GOOGLE_CONFIG };
+                GOOGLE_CONFIG.SHEET_ID = tempSettings.SHEET_ID;
+                GOOGLE_CONFIG.PROJECT_ID = tempSettings.PROJECT_ID;
+                GOOGLE_CONFIG.CLIENT_EMAIL = tempSettings.CLIENT_EMAIL;
+                GOOGLE_CONFIG.PRIVATE_KEY = tempSettings.PRIVATE_KEY;
+
+                // ทดสอบการสร้าง token
+                const token = await getServiceAccountToken();
+                
+                if (token) {
+                    // ทดสอบการเข้าถึง Google Sheets
+                    const testResponse = await fetch(
+                        `https://sheets.googleapis.com/v4/spreadsheets/${tempSettings.SHEET_ID}`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        }
+                    );
+
+                    if (testResponse.ok) {
+                        const sheetInfo = await testResponse.json();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'การเชื่อมต่อสำเร็จ!',
+                            html: `
+                                <div style="text-align: left; padding: 10px;">
+                                    <strong>Sheet Title:</strong> ${sheetInfo.properties.title}<br>
+                                    <strong>Sheet ID:</strong> ${tempSettings.SHEET_ID}<br>
+                                    <strong>Locale:</strong> ${sheetInfo.properties.locale}
+                                </div>
+                            `,
+                            confirmButtonColor: '#059669'
+                        });
+                    } else {
+                        throw new Error(`HTTP ${testResponse.status}: ${testResponse.statusText}`);
+                    }
+                } else {
+                    throw new Error('ไม่สามารถสร้าง Access Token ได้');
+                }
+
+                // คืนค่า config เดิม
+                Object.assign(GOOGLE_CONFIG, originalConfig);
+
+            } catch (error) {
+                console.error('Connection test error:', error);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'การเชื่อมต่อล้มเหลว',
+                    text: error.message,
+                    confirmButtonColor: '#dc2626'
+                });
+
+                // คืนค่า config เดิม
+                if (typeof originalConfig !== 'undefined') {
+                    Object.assign(GOOGLE_CONFIG, originalConfig);
+                }
+            }
+        }
+
     </script>
 </body>
 </html>

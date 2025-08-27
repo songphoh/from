@@ -1,0 +1,21 @@
+# Render Deploy Configuration
+
+# Build Command (ถ้าต้องการ)
+# npm install
+
+# Start Command (สำหรับ Static Site ไม่จำเป็น)
+# serve -s .
+
+# Environment Variables ที่ต้องตั้งค่าใน Render:
+# PROJECT_ID=your-project-id
+# PRIVATE_KEY_ID=your-private-key-id  
+# PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nYOUR_KEY_HERE\n-----END PRIVATE KEY-----
+# CLIENT_EMAIL=your-service-account@your-project.iam.gserviceaccount.com
+# CLIENT_ID=your-client-id
+# SHEET_ID=your-google-sheet-id
+
+# Publish Directory
+# . (current directory)
+
+# Auto-Deploy
+# Yes

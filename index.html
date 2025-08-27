@@ -1,0 +1,2800 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกการกระทำผิดของนักเรียน - หน้าหลัก</title>
+    <!-- SweetAlert2 CSS และ JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Load Config File -->
+    <script src="config.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            /* เพิ่มการป้องกันหน้าขาว */
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Loading Screen */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .loading-subtext {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        body.loaded {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f6ef7 0%, #8b5cf6 50%, #ec4899 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .form-container {
+            padding: 30px;
+            display: none;
+        }
+
+        .form-container.active {
+            display: block;
+        }
+
+        .login-container {
+            display: none; /* ซ่อนส่วนล็อกอิน */
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .form-section {
+            background: rgba(79, 110, 247, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid rgba(79, 110, 247, 0.2);
+        }
+
+        .section-title {
+            color: #4f6ef7;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4f6ef7;
+            box-shadow: 0 0 0 3px rgba(79, 110, 247, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f6ef7, #8b5cf6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 110, 247, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .login-form {
+            display: none; /* ซ่อนฟอร์มล็อกอิน */
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        /* Enhanced Responsive Design */
+        
+        /* Desktop Large (1200px+) */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1100px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 35px;
+            }
+            
+            .header h1 {
+                font-size: 28px;
+            }
+            
+            .section-title {
+                font-size: 20px;
+            }
+        }
+        
+        /* Desktop (992px - 1199px) */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .container {
+                max-width: 950px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+            }
+            
+            .header h1 {
+                font-size: 26px;
+            }
+        }
+        
+        /* Tablet Large (768px - 991px) */
+        @media (min-width: 768px) and (max-width: 991px) {
+            body {
+                padding: 15px;
+            }
+            
+            .container {
+                max-width: 750px;
+            }
+            
+            .header {
+                padding: 25px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+                margin-bottom: 8px;
+            }
+            
+            .header p {
+                font-size: 13px;
+            }
+            
+            .form-container {
+                padding: 25px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 16px;
+                margin-bottom: 18px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 11px 14px;
+                font-size: 14px;
+            }
+            
+            .btn {
+                padding: 11px 25px;
+                font-size: 15px;
+            }
+            
+            /* Search Section for Tablet */
+            #searchSection {
+                margin: 15px 0;
+            }
+            
+            #searchSection > div {
+                padding: 20px;
+            }
+            
+            #searchSection h3 {
+                font-size: 18px;
+                margin-bottom: 18px;
+            }
+            
+            .demo-account {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+        }
+        
+        /* Mobile Large (576px - 767px) */
+        @media (min-width: 576px) and (max-width: 767px) {
+            body {
+                padding: 12px;
+            }
+            
+            .container {
+                margin: 0;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 22px 18px;
+                border-radius: 15px 15px 0 0;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 6px;
+                line-height: 1.3;
+            }
+            
+            .header p {
+                font-size: 12px;
+                line-height: 1.4;
+            }
+            
+            .form-container {
+                padding: 20px 18px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .form-section {
+                padding: 18px;
+                border-radius: 12px;
+            }
+            
+            .section-title {
+                font-size: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .form-group {
+                margin-bottom: 18px;
+            }
+            
+            .form-group label {
+                font-size: 13px;
+                margin-bottom: 6px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 10px 13px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                gap: 12px;
+                margin-top: 25px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                border-radius: 20px;
+            }
+            
+            .logout-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+                top: 15px;
+                right: 15px;
+            }
+            
+            /* Search Section for Mobile Large */
+            #searchSection > div {
+                padding: 18px;
+                margin: 15px 0;
+                border-radius: 12px;
+            }
+            
+            #searchSection h3 {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
+            
+            #searchSection .form-group input,
+            #searchSection .form-group select {
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            /* Search Grid for Mobile */
+            #searchSection > div > div:first-child > div {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                align-items: end;
+            }
+            
+            #searchSection > div > div:first-child > div > div:last-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4f6ef7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (min-width: 375px) and (max-width: 575px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                margin: 0;
+                border-radius: 12px;
+            }
+            
+            .header {
+                padding: 20px 15px;
+                border-radius: 12px 12px 0 0;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+                margin-bottom: 5px;
+                line-height: 1.2;
+            }
+            
+            .header p {
+                font-size: 11px;
+                line-height: 1.3;
+            }
+            
+            .header .btn-group {
+                margin-top: 15px;
+                gap: 8px;
+            }
+            
+            .header .btn {
+                padding: 8px 15px;
+                font-size: 12px;
+                border-radius: 15px;
+            }
+            
+            .form-container {
+                padding: 18px 15px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+            
+            .form-section {
+                padding: 15px;
+                border-radius: 10px;
+            }
+            
+            .section-title {
+                font-size: 14px;
+                margin-bottom: 12px;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 9px 12px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
+            
+            .form-group textarea {
+                height: 80px;
+            }
+            
+            .checkbox-group {
+                gap: 10px;
+            }
+            
+            .checkbox-item {
+                gap: 6px;
+                font-size: 12px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 20px;
+            }
+            
+            .btn {
+                padding: 10px 18px;
+                font-size: 13px;
+                border-radius: 18px;
+            }
+            
+            .logout-btn {
+                padding: 5px 10px;
+                font-size: 11px;
+                top: 12px;
+                right: 12px;
+                border-radius: 15px;
+            }
+            
+            /* Search Section for Mobile Small */
+            #searchSection > div {
+                padding: 15px;
+                margin: 12px 0;
+                border-radius: 10px;
+            }
+            
+            #searchSection h3 {
+                font-size: 15px;
+                margin-bottom: 12px;
+            }
+            
+            /* Single column search for small mobile */
+            #searchSection > div > div:first-child > div {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 12px;
+                align-items: stretch;
+            }
+            
+            #searchSection .form-group input,
+            #searchSection .form-group select {
+                padding: 9px;
+                font-size: 12px;
+                border-radius: 6px;
+            }
+            
+            #searchSection .btn {
+                height: auto;
+                padding: 9px;
+                font-size: 12px;
+            }
+            
+            /* Search Results */
+            .search-result-item {
+                padding: 12px;
+                margin-bottom: 10px;
+                border-radius: 8px;
+            }
+            
+            .search-result-item h5 {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+            
+            .search-result-item div {
+                font-size: 11px;
+                line-height: 1.4;
+            }
+        }
+        
+        /* Mobile Extra Small (320px - 374px) */
+        @media (max-width: 374px) {
+            body {
+                padding: 8px;
+            }
+            
+            .container {
+                margin: 0;
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 15px 12px;
+                border-radius: 10px 10px 0 0;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+                margin-bottom: 4px;
+                line-height: 1.2;
+            }
+            
+            .header p {
+                font-size: 10px;
+                line-height: 1.3;
+            }
+            
+            .header .btn-group {
+                margin-top: 12px;
+                gap: 6px;
+            }
+            
+            .header .btn {
+                padding: 6px 12px;
+                font-size: 11px;
+                border-radius: 12px;
+            }
+            
+            .form-container {
+                padding: 15px 12px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .form-section {
+                padding: 12px;
+                border-radius: 8px;
+            }
+            
+            .section-title {
+                font-size: 13px;
+                margin-bottom: 10px;
+            }
+            
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            .form-group label {
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 8px 10px;
+                font-size: 12px;
+                border-radius: 5px;
+            }
+            
+            .form-group textarea {
+                height: 70px;
+            }
+            
+            .checkbox-group {
+                gap: 8px;
+            }
+            
+            .checkbox-item {
+                gap: 5px;
+                font-size: 11px;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                gap: 8px;
+                margin-top: 18px;
+            }
+            
+            .btn {
+                padding: 9px 15px;
+                font-size: 12px;
+                border-radius: 15px;
+            }
+            
+            .logout-btn {
+                padding: 4px 8px;
+                font-size: 10px;
+                top: 10px;
+                right: 10px;
+                border-radius: 12px;
+            }
+            
+            /* Search Section for Extra Small Mobile */
+            #searchSection > div {
+                padding: 12px;
+                margin: 10px 0;
+                border-radius: 8px;
+            }
+            
+            #searchSection h3 {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+            
+            #searchSection > div > div:first-child > div {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            #searchSection .form-group input,
+            #searchSection .form-group select {
+                padding: 8px;
+                font-size: 11px;
+                border-radius: 5px;
+            }
+            
+            #searchSection .btn {
+                height: auto;
+                padding: 8px;
+                font-size: 11px;
+            }
+            
+            #searchSection label {
+                font-size: 10px;
+                margin-bottom: 3px;
+            }
+            
+            .loading {
+                width: 14px;
+                height: 14px;
+                border-width: 2px;
+            }
+        }
+        
+        /* Landscape Orientation สำหรับแท็บเล็ต */
+        @media (min-width: 768px) and (max-height: 600px) and (orientation: landscape) {
+            .header {
+                padding: 20px 25px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+                margin-bottom: 5px;
+            }
+            
+            .header p {
+                font-size: 12px;
+            }
+            
+            .form-container {
+                padding: 20px 25px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            
+            .form-section {
+                padding: 15px;
+            }
+            
+            #searchSection > div {
+                padding: 15px;
+            }
+        }
+        
+        /* Landscape Orientation สำหรับมือถือ */
+        @media (max-width: 767px) and (max-height: 500px) and (orientation: landscape) {
+            body {
+                padding: 5px;
+            }
+            
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+                margin-bottom: 3px;
+            }
+            
+            .header p {
+                font-size: 10px;
+            }
+            
+            .header .btn-group {
+                margin-top: 8px;
+                gap: 5px;
+            }
+            
+            .header .btn {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            
+            .form-container {
+                padding: 12px 15px;
+                max-height: calc(100vh - 120px);
+                overflow-y: auto;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            
+            .form-section {
+                padding: 10px;
+            }
+            
+            .section-title {
+                font-size: 12px;
+                margin-bottom: 8px;
+            }
+            
+            .form-group {
+                margin-bottom: 8px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            
+            .btn-group {
+                gap: 8px;
+                margin-top: 15px;
+                flex-direction: row;
+            }
+            
+            .btn {
+                padding: 6px 12px;
+                font-size: 11px;
+            }
+            
+            #searchSection > div {
+                padding: 10px;
+                margin: 8px 0;
+            }
+            
+            #searchSection > div > div:first-child > div {
+                grid-template-columns: 1fr 1fr 100px;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">กำลังโหลดระบบ...</div>
+        <div class="loading-subtext">โปรดรอสักครู่</div>
+    </div>
+
+    <div class="container">
+        <!-- Main Form Section -->
+        <div id="mainSection" class="form-container active">
+            <div class="header" style="position: relative;">
+                <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+                <h1>ระบบบันทึกการกระทำผิดของนักเรียน</h1>
+                <p>จัดการข้อมูลการลงโทษและติดตามพฤติกรรมนักเรียน</p>
+                <p id="userInfo" style="font-size: 12px; opacity: 0.8; margin-top: 10px;"></p>
+                
+                <div class="btn-group" style="margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="showForm()">
+                        📝 บันทึกการกระทำผิด
+                    </button>
+                    <button class="btn btn-secondary" onclick="showSearch()">
+                        🔍 ค้นหาข้อมูล
+                    </button>
+                </div>
+            </div>
+
+            <div id="formAlert"></div>
+
+            <!-- ฟอร์มบันทึกข้อมูล -->
+            <div id="dataEntrySection">
+                <form id="studentForm">
+                    <div class="form-grid">
+                        <!-- ข้อมูลนักเรียนผู้กระทำผิด -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                👨‍🎓 ข้อมูลนักเรียนผู้กระทำผิด
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="studentPrefix">คำนำหน้า</label>
+                                <select id="studentPrefix" name="studentPrefix" required>
+                                    <option value="">เลือกคำนำหน้า</option>
+                                    <option value="เด็กชาย">เด็กชาย</option>
+                                    <option value="เด็กหญิง">เด็กหญิง</option>
+                                    <option value="นาย">นาย</option>
+                                    <option value="นางสาว">นางสาว</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="studentName">ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)</label>
+                                <input type="text" id="studentName" name="studentName" placeholder="กรอกชื่อ-นามสกุล" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="studentClass">ชั้น</label>
+                                <input type="text" id="studentClass" name="studentClass" placeholder="กรอกชั้น เช่น ม.1, ม.2, ป.1, ป.6" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="studentRoom">ห้อง</label>
+                                <input type="text" id="studentRoom" name="studentRoom" placeholder="เช่น 1, 2, 3" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="studentPhone">เบอร์โทรศัพท์</label>
+                                <input type="tel" id="studentPhone" name="studentPhone" placeholder="0981234567" maxlength="10">
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลการกระทำผิด -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                ⚠️ ข้อมูลการกระทำผิด
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="violationType">กรณีที่กระทำความผิด</label>
+                                <input type="text" id="violationType" name="violationType" placeholder="กรอกประเภทการกระทำผิด เช่น มาสายเรียน, ขาดเรียน, ไม่ส่งการบ้าน" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="violationDate">ว/ด/ป กระทำความผิด</label>
+                                <input type="date" id="violationDate" name="violationDate" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="actionTaken">ดำเนินการ</label>
+                                <select id="actionTaken" name="actionTaken" required>
+                                    <option value="">เลือกมาตรการ</option>
+                                    <option value="ตักเตือน">ตักเตือน</option>
+                                    <option value="ทัณฑ์บน">ทัณฑ์บน</option>
+                                    <option value="ตัดคะแนน">ตัดคะแนน</option>
+                                    <option value="เชิญผู้ปกครอง">เชิญผู้ปกครอง</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="pointsDeducted">ตัดคะแนน (จำนวนคะแนน)</label>
+                                <input type="number" id="pointsDeducted" name="pointsDeducted" placeholder="จำนวนคะแนนที่ตัด" min="0" max="100">
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลผู้ปกครอง -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                👨‍👩‍👧‍👦 ข้อมูลผู้ปกครอง
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="guardianName">ข้อมูลผู้ปกครอง (มีคำนำหน้า)</label>
+                                <input type="text" id="guardianName" name="guardianName" placeholder="คำนำหน้า ชื่อ-นามสกุล ผู้ปกครอง">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="guardianPhone">เบอร์โทรผู้ปกครอง</label>
+                                <input type="tel" id="guardianPhone" name="guardianPhone" placeholder="0981234567" maxlength="10">
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลผู้ลงทะเบียน -->
+                        <div class="form-section">
+                            <div class="section-title">
+                                📝 ข้อมูลผู้ลงทะเบียน
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="registeredBy">ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)</label>
+                                <input type="text" id="registeredBy" name="registeredBy" placeholder="คำนำหน้า ชื่อ-นามสกุล ผู้ลงทะเบียน" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="position">ตำแหน่ง</label>
+                                <select id="position" name="position" required>
+                                    <option value="">เลือกตำแหน่ง</option>
+                                    <option value="สารวัตรนักเรียน">สารวัตรนักเรียน</option>
+                                    <option value="ครู">ครู</option>
+                                    <option value="ครูใหญ่">ครูใหญ่</option>
+                                    <option value="รองผู้อำนวยการ">รองผู้อำนวยการ</option>
+                                    <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+                                    <option value="หัวหน้าฝ่ายวินัย">หัวหน้าฝ่ายวินัย</option>
+                                    <option value="ครูที่ปรึกษา">ครูที่ปรึกษา</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="submit" id="submitBtn" class="btn btn-primary">
+                            💾 บันทึกการกระทำผิด
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- หน้าค้นหาข้อมูล -->
+            <div id="searchSection" style="display: none;">
+                <div style="background: rgba(79, 110, 247, 0.1); border-radius: 15px; padding: 25px; margin: 20px 0;">
+                    <h3 style="color: #4f6ef7; margin-bottom: 20px;">🔍 ค้นหาข้อมูลการกระทำผิด</h3>
+                    
+                    <!-- ฟอร์มค้นหา -->
+                    <div style="background: white; border-radius: 10px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 120px; gap: 15px; align-items: end;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ชื่อนักเรียน:</label>
+                                <input type="text" id="searchName" placeholder="กรอกชื่อที่ต้องการค้นหา" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ชั้น:</label>
+                                <select id="searchClass" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                    <option value="">ทั้งหมด</option>
+                                    <option value="ม.1">ม.1</option>
+                                    <option value="ม.2">ม.2</option>
+                                    <option value="ม.3">ม.3</option>
+                                    <option value="ม.4">ม.4</option>
+                                    <option value="ม.5">ม.5</option>
+                                    <option value="ม.6">ม.6</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ประเภทการกระทำผิด:</label>
+                                <select id="searchViolationType" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                                    <option value="">ทั้งหมด</option>
+                                    <option value="มาสายเรียน">มาสายเรียน</option>
+                                    <option value="ขาดเรียน">ขาดเรียน</option>
+                                    <option value="ไม่ส่งการบ้าน">ไม่ส่งการบ้าน</option>
+                                    <option value="แต่งกายไม่เหมาะสม">แต่งกายไม่เหมาะสม</option>
+                                    <option value="ทำให้เกิดเสียงรบกวน">ทำให้เกิดเสียงรบกวน</option>
+                                    <option value="ใช้โทรศัพท์ในห้องเรียน">ใช้โทรศัพท์ในห้องเรียน</option>
+                                    <option value="ก่อให้เกิดความเดือดร้อน">ก่อให้เกิดความเดือดร้อน</option>
+                                    <option value="อื่นๆ">อื่นๆ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button id="searchBtn" onclick="searchStudents()" class="btn btn-primary" style="width: 100%; height: 48px;">
+                                    🔍 ค้นหา
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button onclick="loadAllData()" class="btn btn-secondary" style="padding: 8px 20px;">
+                                📋 แสดงข้อมูลทั้งหมด
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- ผลการค้นหา -->
+                    <div id="searchResults"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // *** ฟังก์ชันอ่าน Environment Variables จาก Config หรือ URL ***
+        function getEnvVar(key, defaultValue = null) {
+            // 1. ลองอ่านจาก CONFIG ก่อน (ไฟล์ config.js)
+            if (window.APP_CONFIG && window.APP_CONFIG.GOOGLE && window.APP_CONFIG.GOOGLE[key]) {
+                return window.APP_CONFIG.GOOGLE[key];
+            }
+            
+            // 2. ลองอ่านจาก URL Parameters (สำหรับการทดสอบ)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has(key)) {
+                return urlParams.get(key);
+            }
+            
+            // 3. ลองอ่านจาก Window Object (ถ้า server inject ค่าเข้ามา)
+            if (window.ENV && window.ENV[key]) {
+                return window.ENV[key];
+            }
+            
+            // 4. ลองอ่านจาก Meta Tags (สำหรับ Server-side rendering)
+            const metaTag = document.querySelector(`meta[name="env-${key.toLowerCase()}"]`);
+            if (metaTag) {
+                return metaTag.getAttribute('content');
+            }
+            
+            // 5. ถ้าไม่พบค่าใดๆ แสดงข้อความเตือน
+            if (!defaultValue) {
+                console.error(`❌ Missing required environment variable: ${key}`);
+                console.error('📋 Please check:');
+                console.error('  1. Create config.js from config.example.js');
+                console.error('  2. Set Environment Variables on your hosting platform');
+                console.error('  3. Check that config.js is loaded before this script');
+            }
+            
+            // 6. ใช้ค่า default (หากมี)
+            return defaultValue;
+        }
+        
+        // ตรวจสอบว่ามี config.js หรือไม่
+        function checkConfigurationStatus() {
+            const hasConfig = window.APP_CONFIG && window.APP_CONFIG.GOOGLE;
+            const hasUrlParams = new URLSearchParams(window.location.search).has('PROJECT_ID');
+            const hasEnvVars = window.ENV && window.ENV.PROJECT_ID;
+            
+            if (!hasConfig && !hasUrlParams && !hasEnvVars) {
+                console.warn('⚠️  No configuration found!');
+                console.warn('📋 Please ensure one of the following:');
+                console.warn('  1. Create config.js from config.example.js for local development');
+                console.warn('  2. Set Environment Variables for production deployment');
+                console.warn('  3. The config.js file is properly loaded');
+                
+                return false;
+            }
+            
+            return true;
+        }
+
+        // *** การกำหนดค่า Google Sheets API (Service Account) ***
+        const GOOGLE_CONFIG = {
+            // Service Account Configuration - อ่านจาก Config หรือ Environment Variables
+            SERVICE_ACCOUNT: {
+                type: "service_account",
+                project_id: getEnvVar('PROJECT_ID'),
+                private_key_id: getEnvVar('PRIVATE_KEY_ID'),
+                private_key: getEnvVar('PRIVATE_KEY'),
+                client_email: getEnvVar('CLIENT_EMAIL'),
+                client_id: getEnvVar('CLIENT_ID'),
+                auth_uri: "https://accounts.google.com/o/oauth2/auth",
+                token_uri: "https://oauth2.googleapis.com/token"
+            },
+            SHEET_ID: getEnvVar('SHEET_ID'), // อ่านจาก Config หรือ Environment Variable
+            DISCOVERY_DOC: 'https://sheets.googleapis.com/$discovery/rest?version=v4',
+            SCOPES: 'https://www.googleapis.com/auth/spreadsheets',
+            // กำหนดชื่อ Sheets ต่างๆ
+            SHEETS: {
+                LOGIN: 'Login',  // แผ่นงานเก็บข้อมูลผู้ใช้
+                DATA: 'data'     // แผ่นงานเก็บข้อมูลการกระทำผิด
+            }
+        };
+
+        // Cache สำหรับเก็บข้อมูลผู้ใช้และ Access Token
+        let usersCache = {};
+        let accessToken = null;
+        let tokenExpiry = null;
+
+        let isLoggedIn = false;
+        let currentUser = null;
+        let gapi = null;
+        let isApiReady = false;
+
+        // *** Service Account Authentication ***
+        async function getServiceAccountToken() {
+            if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
+                return accessToken; // ใช้ token ที่มีอยู่ถ้ายังไม่หมดอายุ
+            }
+
+            try {
+                // สร้าง JWT สำหรับ Service Account
+                const header = {
+                    "alg": "RS256",
+                    "typ": "JWT"
+                };
+
+                const now = Math.floor(Date.now() / 1000);
+                const payload = {
+                    "iss": GOOGLE_CONFIG.SERVICE_ACCOUNT.client_email,
+                    "scope": GOOGLE_CONFIG.SCOPES,
+                    "aud": "https://oauth2.googleapis.com/token",
+                    "exp": now + 3600, // หมดอายุใน 1 ชั่วโมง
+                    "iat": now
+                };
+
+                // ใช้ Web Crypto API สำหรับ JWT signing
+                const jwtToken = await createJWT(header, payload, GOOGLE_CONFIG.SERVICE_ACCOUNT.private_key);
+
+                // แลกเปลี่ยน JWT กับ Access Token
+                const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: 'grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=' + jwtToken
+                });
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to get access token');
+                }
+
+                const tokenData = await tokenResponse.json();
+                accessToken = tokenData.access_token;
+                tokenExpiry = Date.now() + (tokenData.expires_in * 1000);
+
+                return accessToken;
+            } catch (error) {
+                console.error('Error getting service account token:', error);
+                throw error;
+            }
+        }
+
+        // สร้าง JWT Token
+        async function createJWT(header, payload, privateKey) {
+            const encoder = new TextEncoder();
+            
+            const headerB64 = btoa(JSON.stringify(header)).replace(/[+/]/g, char => char === '+' ? '-' : '_').replace(/=/g, '');
+            const payloadB64 = btoa(JSON.stringify(payload)).replace(/[+/]/g, char => char === '+' ? '-' : '_').replace(/=/g, '');
+            
+            const data = encoder.encode(headerB64 + '.' + payloadB64);
+            
+            // แปลง private key
+            const pemKey = privateKey.replace(/-----BEGIN PRIVATE KEY-----|\n|-----END PRIVATE KEY-----/g, '');
+            const keyData = Uint8Array.from(atob(pemKey), c => c.charCodeAt(0));
+            
+            const cryptoKey = await window.crypto.subtle.importKey(
+                'pkcs8',
+                keyData,
+                {
+                    name: 'RSASSA-PKCS1-v1_5',
+                    hash: 'SHA-256'
+                },
+                false,
+                ['sign']
+            );
+            
+            const signature = await window.crypto.subtle.sign(
+                'RSASSA-PKCS1-v1_5',
+                cryptoKey,
+                data
+            );
+            
+            const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+                .replace(/[+/]/g, char => char === '+' ? '-' : '_')
+                .replace(/=/g, '');
+            
+            return headerB64 + '.' + payloadB64 + '.' + signatureB64;
+        }
+
+        // อ่านข้อมูลจาก Google Sheets
+        async function readGoogleSheet(sheetName, range = null) {
+            try {
+                const token = await getServiceAccountToken();
+                
+                // ถ้าไม่ระบุ range ให้อ่านทั้งหมด
+                const rangeToRead = range || `${sheetName}!A:Z`;
+                
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${rangeToRead}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const values = data.values || [];
+                
+                if (values.length === 0) {
+                    return { success: true, data: [] };
+                }
+
+                // Convert to objects
+                const headers = values[0];
+                const dataRows = values.slice(1).map(row => {
+                    const obj = {};
+                    headers.forEach((header, index) => {
+                        obj[header] = row[index] || '';
+                    });
+                    return obj;
+                });
+
+                return { success: true, data: dataRows };
+            } catch (error) {
+                console.error('Error reading Google Sheet:', error);
+                return { success: false, message: error.message };
+            }
+        }
+
+        // โหลดข้อมูลผู้ใช้จาก Sheet "Login"
+        async function loadUsersFromSheet() {
+            try {
+                console.log('Loading users from Login sheet...');
+                
+                const result = await readGoogleSheet(GOOGLE_CONFIG.SHEETS.LOGIN);
+                
+                if (result.success && result.data) {
+                    // แปลงข้อมูลผู้ใช้เป็น object
+                    const users = {};
+                    result.data.forEach(row => {
+                        const username = row['username'] || row['Username'] || row['ชื่อผู้ใช้'];
+                        const password = row['password'] || row['Password'] || row['รหัสผ่าน'];
+                        const role = row['role'] || row['Role'] || row['บทบาท'];
+                        const fullName = row['full_name'] || row['Full_Name'] || row['ชื่อ-นามสกุล'];
+                        const status = row['status'] || row['Status'] || row['สถานะ'] || 'active';
+                        
+                        if (username && password && status.toLowerCase() === 'active') {
+                            users[username] = {
+                                password: password,
+                                role: role || 'ผู้ใช้',
+                                username: username,
+                                fullName: fullName || username
+                            };
+                        }
+                    });
+                    
+                    usersCache = users;
+                    console.log('Users loaded successfully:', Object.keys(users));
+                    return { success: true, users: users };
+                } else {
+                    console.warn('No users found in Login sheet, using demo users');
+                    // ใช้ข้อมูลผู้ใช้ Demo หากไม่มีข้อมูลใน Sheet
+                    usersCache = window.APP_CONFIG && window.APP_CONFIG.DEMO_USERS ? window.APP_CONFIG.DEMO_USERS : {};
+                    return { success: true, users: usersCache };
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                // ใช้ข้อมูลผู้ใช้ Demo เมื่อเกิดข้อผิดพลาด
+                usersCache = window.APP_CONFIG && window.APP_CONFIG.DEMO_USERS ? window.APP_CONFIG.DEMO_USERS : {};
+                return { success: false, message: error.message, users: usersCache };
+            }
+        }
+
+        // เขียนข้อมูลลง Google Sheets
+        async function writeToGoogleSheet(data, sheetName = null) {
+            try {
+                const token = await getServiceAccountToken();
+                
+                // ใช้ sheet "data" เป็นค่าเริ่มต้น
+                const targetSheet = sheetName || GOOGLE_CONFIG.SHEETS.DATA;
+                
+                // ตรวจสอบว่ามี header แล้วหรือไม่
+                const existingData = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                const existingResult = await existingData.json();
+
+                // กำหนด headers สำหรับ sheet data
+                const headers = [
+                    'ประทับเวลา', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
+                    'เบอร์โทรศัพท์', 'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
+                    'ตัดคะแนน (จำนวนคะแนน)', 'ข้อมูลผู้ปกครอง (มีคำนำหน้า)', 'เบอร์โทรผู้ปกครอง', 
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)', 'ตำแหน่ง'
+                ];
+
+                // ถ้าไม่มี header ให้เพิ่ม
+                if (!existingResult.values || existingResult.values.length === 0) {
+                    await fetch(
+                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1?valueInputOption=RAW`,
+                        {
+                            method: 'PUT',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                values: [headers]
+                            })
+                        }
+                    );
+                }
+
+                // เพิ่มข้อมูลใหม่
+                const row = [
+                    new Date().toLocaleString('th-TH'),
+                    data.studentPrefix || '',
+                    data.studentName || '',
+                    data.studentClass || '',
+                    data.studentRoom || '',
+                    data.studentPhone || '',
+                    data.violationType || '',
+                    data.violationDate || '',
+                    data.actionTaken || '',
+                    data.pointsDeducted || '0',
+                    data.guardianName || '',
+                    data.guardianPhone || '',
+                    data.registeredBy || '',
+                    data.position || ''
+                ];
+
+                const appendResponse = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            values: [row]
+                        })
+                    }
+                );
+
+                if (!appendResponse.ok) {
+                    throw new Error(`Failed to append data: ${appendResponse.statusText}`);
+                }
+
+                return { success: true, message: 'บันทึกข้อมูลเรียบร้อยแล้ว' };
+            } catch (error) {
+                console.error('Error writing to Google Sheet:', error);
+                return { success: false, message: error.message };
+            }
+        }
+
+        // *** Authentication Functions ***
+        async function performLogin(username, password) {
+            Swal.fire({
+                title: 'กำลังเข้าสู่ระบบ...',
+                html: '<div class="loading-spinner" style="margin: 20px auto;"></div>',
+                showConfirmButton: false,
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+
+            // โหลดข้อมูลผู้ใช้จาก Google Sheets ก่อน
+            await loadUsersFromSheet();
+
+            // ตรวจสอบข้อมูลผู้ใช้
+            if (usersCache[username] && usersCache[username].password === password) {
+                isLoggedIn = true;
+                currentUser = usersCache[username];
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'เข้าสู่ระบบสำเร็จ!',
+                    text: `ยินดีต้อนรับ ${currentUser.fullName || currentUser.username}`,
+                    timer: 1500,
+                    showConfirmButton: false,
+                    iconColor: '#059669'
+                }).then(() => {
+                    updateUserInfo();
+                    enableAllFunctions();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เข้าสู่ระบบไม่สำเร็จ',
+                    text: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+                    confirmButtonColor: '#dc2626'
+                }).then(() => {
+                    showLoginPopup();
+                });
+            }
+        }
+
+        // ตรวจสอบสถานะล็อกอินเมื่อโหลดหน้า
+        async function checkLoginStatus() {
+            console.log('Checking login status...');
+            console.log('Document ready state:', document.readyState);
+            
+            // อัปเดต loading text
+            updateLoadingText('เริ่มต้นระบบ...');
+            
+            // รอให้หน้าโหลดเสร็จ
+            if (document.readyState !== 'complete') {
+                console.log('Document not ready, waiting...');
+                setTimeout(checkLoginStatus, 100);
+                return;
+            }
+            
+            // ตรวจสอบการตั้งค่า Configuration
+            updateLoadingText('ตรวจสอบการตั้งค่า...');
+            const hasValidConfig = checkConfigurationStatus();
+            
+            if (!hasValidConfig) {
+                updateLoadingText('ไม่พบการตั้งค่า...');
+                showConfigurationError();
+                return;
+            }
+            
+            // ทดสอบการเชื่อมต่อ Google Sheets API
+            updateLoadingText('ทดสอบการเชื่อมต่อ Google Sheets...');
+            try {
+                // ทดสอบ Service Account Token
+                const token = await getServiceAccountToken();
+                if (token) {
+                    isApiReady = true;
+                    console.log('Service Account authentication successful');
+                } else {
+                    throw new Error('Failed to get service account token');
+                }
+            } catch (error) {
+                console.error('Service Account authentication failed:', error);
+                updateLoadingText('ไม่สามารถเชื่อมต่อ Google Sheets ได้');
+                showOfflineMode();
+                return;
+            }
+            
+            const loginStatus = localStorage.getItem('isLoggedIn');
+            const userData = localStorage.getItem('currentUser');
+            
+            console.log('Login status:', loginStatus);
+            console.log('User data:', userData);
+            
+            if (loginStatus === 'true' && userData) {
+                isLoggedIn = true;
+                currentUser = JSON.parse(userData);
+                console.log('User logged in, showing main form...');
+                
+                updateLoadingText('เตรียมแสดงหน้าจอ...');
+                setTimeout(() => {
+                    showMainForm();
+                }, 300);
+            } else {
+                console.log('User not logged in, showing login popup...');
+                updateLoadingText('เตรียมหน้าจอล็อกอิน...');
+                
+                // แสดงหน้าหลักก่อนแล้วเด้ง popup login
+                setTimeout(() => {
+                    showMainFormWithoutLogin();
+                    setTimeout(() => {
+                        showLoginPopup();
+                    }, 500);
+                }, 300);
+            }
+        }
+
+        // แสดงข้อผิดพลาดเมื่อไม่มีการตั้งค่า
+        function showConfigurationError() {
+            updateLoadingText('ไม่พบไฟล์การตั้งค่า');
+            setTimeout(() => {
+                hideLoadingScreen();
+                Swal.fire({
+                    icon: 'error',
+                    title: '⚙️ ไม่พบการตั้งค่าระบบ',
+                    html: `
+                        <div style="text-align: left; margin: 20px 0;">
+                            <p><strong>ไม่พบไฟล์ config.js หรือ Environment Variables</strong></p>
+                            
+                            <div style="margin: 20px 0; padding: 15px; background: #fee2e2; border-radius: 8px; border-left: 4px solid #dc2626;">
+                                <p><strong>📋 สำหรับการพัฒนาในเครื่อง (Local Development):</strong></p>
+                                <ol style="margin: 10px 0 10px 20px; line-height: 1.6;">
+                                    <li>คัดลอกไฟล์ <code>config.example.js</code> เป็น <code>config.js</code></li>
+                                    <li>แก้ไขค่าใน <code>config.js</code> ตามข้อมูลจริงของคุณ</li>
+                                    <li>ตรวจสอบว่าไฟล์ <code>config.js</code> ถูกโหลดก่อน <code>index.html</code></li>
+                                </ol>
+                            </div>
+                            
+                            <div style="margin: 20px 0; padding: 15px; background: #dbeafe; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                                <p><strong>🚀 สำหรับ Production (Render, Netlify, etc.):</strong></p>
+                                <ol style="margin: 10px 0 10px 20px; line-height: 1.6;">
+                                    <li>ตั้งค่า Environment Variables:</li>
+                                    <ul style="margin: 5px 0 5px 20px;">
+                                        <li><code>PROJECT_ID</code></li>
+                                        <li><code>PRIVATE_KEY_ID</code></li>
+                                        <li><code>PRIVATE_KEY</code></li>
+                                        <li><code>CLIENT_EMAIL</code></li>
+                                        <li><code>CLIENT_ID</code></li>
+                                        <li><code>SHEET_ID</code></li>
+                                    </ul>
+                                </ol>
+                            </div>
+                            
+                            <div style="margin: 20px 0; padding: 15px; background: #f3f4f6; border-radius: 8px;">
+                                <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                                    💡 <strong>หมายเหตุ:</strong> ตรวจสอบ Console (F12) เพื่อดูข้อมูลเพิ่มเติม
+                                </p>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: 'ตรวจสอบอีกครั้ง',
+                    confirmButtonColor: '#dc2626',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(() => {
+                    location.reload();
+                });
+            }, 1000);
+        }
+
+        // แสดงโหมดออฟไลน์เมื่อไม่สามารถเชื่อมต่อ Google API ได้
+        function showOfflineMode() {
+            updateLoadingText('โหมดออฟไลน์');
+            setTimeout(() => {
+                hideLoadingScreen();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ไม่สามารถเชื่อมต่อ Google Sheets ได้',
+                    html: `
+                        <div style="text-align: left; margin: 20px 0;">
+                            <p><strong>โปรดตรวจสอบ:</strong></p>
+                            <ul style="text-align: left; margin: 10px 0 10px 20px;">
+                                <li>Google Sheet ID ถูกต้อง</li>
+                                <li>Service Account มีสิทธิ์เข้าถึง Google Sheet</li>
+                                <li>การเชื่อมต่ออินเทอร์เน็ต</li>
+                            </ul>
+                            <p style="margin-top: 15px; padding: 10px; background: #f3f4f6; border-radius: 5px; font-size: 12px;">
+                                💡 <strong>วิธีแก้ไข:</strong> ตรวจสอบว่า Google Sheet มีสิทธิ์ให้ Service Account เข้าถึงได้ และ SHEET_ID ถูกต้อง
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonText: 'ลองใหม่',
+                    confirmButtonColor: '#4f6ef7'
+                }).then(() => {
+                    location.reload();
+                });
+            }, 1000);
+        }
+
+        // แสดง Login Popup
+        function showLoginPopup() {
+            Swal.fire({
+                title: '🔐 เข้าสู่ระบบ',
+                html: `
+                    <div style="text-align: left; margin: 20px 0;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">ชื่อผู้ใช้:</label>
+                            <input type="text" id="swal-username" class="swal2-input" placeholder="กรอกชื่อผู้ใช้" style="margin: 0; width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500; color: #333;">รหัสผ่าน:</label>
+                            <input type="password" id="swal-password" class="swal2-input" placeholder="กรอกรหัสผ่าน" style="margin: 0; width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <h4 style="color: #4f6ef7; margin-bottom: 10px; font-size: 14px;">🎭 บัญชีทดสอบ:</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 12px;">
+                                <button type="button" onclick="fillDemoAccount('admin', 'admin123')" class="demo-account-btn">
+                                    👤 admin / admin123
+                                </button>
+                                <button type="button" onclick="fillDemoAccount('teacher', 'teacher123')" class="demo-account-btn">
+                                    🏫 teacher / teacher123
+                                </button>
+                            </div>
+                            <div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 5px; font-size: 11px; text-align: left;">
+                                <strong>⚙️ การตั้งค่า Google Sheets (Service Account):</strong><br>
+                                <strong>Sheet "Login":</strong> username | password | role | full_name | status<br>
+                                <strong>Sheet "data":</strong> สำหรับเก็บข้อมูลการกระทำผิด<br><br>
+                                
+                                <strong>🔧 ใส่ Google Sheet ID:</strong><br>
+                                แก้ไขค่า SHEET_ID ในไฟล์ HTML<br><br>
+                                
+                                <strong>ตัวอย่างข้อมูลใน Sheet "Login":</strong><br>
+                                <div style="font-family: monospace; background: #f5f5f5; padding: 5px; margin: 5px 0; font-size: 10px;">
+                                admin | admin123 | ผู้ดูแลระบบ | ผู้ดูแลระบบ | active<br>
+                                teacher | teacher123 | ครู | ครูผู้สอน | active
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <style>
+                        .demo-account-btn {
+                            background: #e3f2fd;
+                            border: 1px solid #2196f3;
+                            color: #1976d2;
+                            padding: 8px 12px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 11px;
+                            transition: all 0.2s;
+                        }
+                        .demo-account-btn:hover {
+                            background: #2196f3;
+                            color: white;
+                        }
+                    </style>
+                `,
+                showCancelButton: false,
+                showConfirmButton: true,
+                confirmButtonText: '🚀 เข้าสู่ระบบ',
+                confirmButtonColor: '#4f6ef7',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                width: '400px',
+                preConfirm: () => {
+                    const username = document.getElementById('swal-username').value;
+                    const password = document.getElementById('swal-password').value;
+                    
+                    if (!username || !password) {
+                        Swal.showValidationMessage('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                        return false;
+                    }
+                    
+                    return { username, password };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performLogin(result.value.username, result.value.password);
+                }
+            });
+            
+            // เพิ่ม Enter key support
+            setTimeout(() => {
+                const usernameInput = document.getElementById('swal-username');
+                const passwordInput = document.getElementById('swal-password');
+                
+                if (usernameInput && passwordInput) {
+                    [usernameInput, passwordInput].forEach(input => {
+                        input.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') {
+                                document.querySelector('.swal2-confirm').click();
+                            }
+                        });
+                    });
+                    
+                    usernameInput.focus();
+                }
+            }, 100);
+        }
+
+        // กรอกบัญชีทดสอบ
+        function fillDemoAccount(username, password) {
+            document.getElementById('swal-username').value = username;
+            document.getElementById('swal-password').value = password;
+        }
+
+        // แสดงฟอร์มหลักโดยไม่ต้องล็อกอิน (แต่ปิดการใช้งาน)
+        function showMainFormWithoutLogin() {
+            console.log('Showing main form without login...');
+            updateLoadingText('กำลังเตรียมหน้าจอ...');
+            
+            // ตรวจสอบว่า DOM พร้อมแล้ว
+            const mainSection = document.getElementById('mainSection');
+            const dataEntrySection = document.getElementById('dataEntrySection');
+            const searchSection = document.getElementById('searchSection');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (!mainSection || !dataEntrySection || !searchSection || !userInfo) {
+                console.log('DOM elements not ready, retrying...');
+                updateLoadingText('รอโหลด DOM Elements...');
+                setTimeout(showMainFormWithoutLogin, 200);
+                return;
+            }
+            
+            console.log('DOM elements found, displaying form...');
+            updateLoadingText('แสดงฟอร์ม...');
+            
+            // แสดงหน้าหลัก
+            mainSection.classList.add('active');
+            mainSection.style.display = 'block';
+            
+            // แสดงฟอร์มกรอกข้อมูลเป็นค่าเริ่มต้น
+            dataEntrySection.style.display = 'block';
+            searchSection.style.display = 'none';
+            
+            // แสดงข้อความยังไม่ได้ล็อกอิน
+            userInfo.textContent = 'กรุณาเข้าสู่ระบบเพื่อใช้งาน';
+            userInfo.style.color = '#dc2626';
+            
+            // โหลดข้อมูลฟอร์ม
+            updateLoadingText('โหลดข้อมูลฟอร์ม...');
+            setTimeout(() => {
+                loadFormData();
+                console.log('Form loaded successfully');
+                
+                // ปิดการใช้งานทุกฟังก์ชัน
+                disableAllFunctions();
+                
+                // ซ่อน Loading Screen และแสดงหน้าจอ
+                updateLoadingText('เสร็จสิ้น!');
+                setTimeout(() => {
+                    hideLoadingScreen();
+                    document.body.classList.add('loaded');
+                }, 300);
+            }, 200);
+        }
+
+        // ปิดการใช้งานทุกฟังก์ชัน
+        function disableAllFunctions() {
+            // ปิดการใช้งานฟอร์ม
+            const form = document.getElementById('studentForm');
+            if (form) {
+                const formElements = form.querySelectorAll('input, select, button');
+                formElements.forEach(element => {
+                    element.disabled = true;
+                    element.style.opacity = '0.5';
+                });
+            }
+            
+            // ปิดการใช้งานปุ่มในหัวข้อ
+            const headerButtons = document.querySelectorAll('.header .btn');
+            headerButtons.forEach(button => {
+                button.disabled = true;
+                button.style.opacity = '0.5';
+            });
+            
+            // ซ่อนปุ่มออกจากระบบ
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // เปิดการใช้งานทุกฟังก์ชัน
+        function enableAllFunctions() {
+            // เปิดการใช้งานฟอร์ม
+            const form = document.getElementById('studentForm');
+            if (form) {
+                const formElements = form.querySelectorAll('input, select, button');
+                formElements.forEach(element => {
+                    element.disabled = false;
+                    element.style.opacity = '1';
+                });
+            }
+            
+            // เปิดการใช้งานปุ่มในหัวข้อ
+            const headerButtons = document.querySelectorAll('.header .btn');
+            headerButtons.forEach(button => {
+                button.disabled = false;
+                button.style.opacity = '1';
+            });
+            
+            // แสดงปุ่มออกจากระบบ
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.style.display = 'block';
+            }
+        }
+
+        // อัปเดตข้อมูลผู้ใช้
+        function updateUserInfo() {
+            const userInfo = document.getElementById('userInfo');
+            if (currentUser && userInfo) {
+                userInfo.textContent = `ผู้ใช้: ${currentUser.username} | บทบาท: ${currentUser.role}`;
+                userInfo.style.color = 'rgba(255, 255, 255, 0.8)';
+                console.log('User info updated:', currentUser);
+            }
+        }
+
+        // อัปเดตข้อความ Loading
+        function updateLoadingText(text) {
+            const loadingTextElement = document.querySelector('.loading-text');
+            if (loadingTextElement) {
+                loadingTextElement.textContent = text;
+            }
+        }
+
+        // ซ่อน Loading Screen
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }
+        }
+
+        // ฟังก์ชันล็อกเอาท์
+        function logout() {
+            Swal.fire({
+                title: 'ออกจากระบบ?',
+                text: 'คุณต้องการออกจากระบบหรือไม่?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#4f6ef7',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ออกจากระบบ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ออกจากระบบแล้ว',
+                        text: 'ขอบคุณที่ใช้บริการ',
+                        timer: 1000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // ล้างข้อมูลล็อกอิน
+                        isLoggedIn = false;
+                        currentUser = null;
+                        localStorage.removeItem('isLoggedIn');
+                        localStorage.removeItem('currentUser');
+                        
+                        // ปิดการใช้งานและแสดง popup login อีกครั้ง
+                        disableAllFunctions();
+                        const userInfo = document.getElementById('userInfo');
+                        if (userInfo) {
+                            userInfo.textContent = 'กรุณาเข้าสู่ระบบเพื่อใช้งาน';
+                            userInfo.style.color = '#dc2626';
+                        }
+                        showLoginPopup();
+                    });
+                }
+            });
+        }
+
+        // แสดงฟอร์มหลัก
+        function showMainForm() {
+            console.log('Showing main form...');
+            updateLoadingText('กำลังเตรียมหน้าจอ...');
+            
+            // ตรวจสอบว่า DOM พร้อมแล้ว
+            const mainSection = document.getElementById('mainSection');
+            const dataEntrySection = document.getElementById('dataEntrySection');
+            const searchSection = document.getElementById('searchSection');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (!mainSection || !dataEntrySection || !searchSection || !userInfo) {
+                console.log('DOM elements not ready, retrying...');
+                updateLoadingText('รอโหลด DOM Elements...');
+                setTimeout(showMainForm, 200);
+                return;
+            }
+            
+            console.log('DOM elements found, displaying form...');
+            updateLoadingText('แสดงฟอร์ม...');
+            
+            // แสดงหน้าหลัก
+            mainSection.classList.add('active');
+            mainSection.style.display = 'block';
+            
+            // แสดงฟอร์มกรอกข้อมูลเป็นค่าเริ่มต้น
+            dataEntrySection.style.display = 'block';
+            searchSection.style.display = 'none';
+            
+            // แสดงข้อมูลผู้ใช้
+            if (currentUser) {
+                userInfo.textContent = `ผู้ใช้: ${currentUser.username} | บทบาท: ${currentUser.role}`;
+                console.log('User info displayed:', currentUser);
+            }
+            
+            // โหลดข้อมูลฟอร์ม
+            updateLoadingText('โหลดข้อมูลฟอร์ม...');
+            setTimeout(() => {
+                loadFormData();
+                console.log('Form loaded successfully');
+                
+                // ซ่อน Loading Screen และแสดงหน้าจอ
+                updateLoadingText('เสร็จสิ้น!');
+                setTimeout(() => {
+                    hideLoadingScreen();
+                    document.body.classList.add('loaded');
+                }, 300);
+            }, 200);
+        }
+
+        // โหลดข้อมูลในฟอร์ม
+        function loadFormData() {
+            // โหลดตัวเลือกในฟอร์มต่างๆ
+            loadSelectOptions();
+        }
+
+        // โหลดตัวเลือกในฟอร์ม
+        function loadSelectOptions() {
+            // โหลดตัวเลือกสำหรับ dropdown ต่างๆ
+            const classOptions = ['', 'ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
+            const violationOptions = ['', 'มาสายเรียน', 'ขาดเรียน', 'ไม่ส่งการบ้าน', 'แต่งกายไม่เหมาะสม', 'ทำให้เกิดเสียงรบกวน', 'ใช้โทรศัพท์ในห้องเรียน', 'ก่อให้เกิดความเดือดร้อน', 'อื่นๆ'];
+            const positionOptions = ['', 'สารวัตรนักเรียน', 'ครู', 'ครูใหญ่', 'รองผู้อำนวยการ', 'ผู้อำนวยการ', 'หัวหน้าฝ่ายวินัย', 'ครูที่ปรึกษา'];
+            
+            // โหลดตัวเลือกในฟอร์มค้นหา
+            const searchClassSelect = document.getElementById('searchClass');
+            const searchViolationSelect = document.getElementById('searchViolationType');
+            const positionSelect = document.getElementById('position');
+            
+            if (searchClassSelect) {
+                searchClassSelect.innerHTML = classOptions.map(option => 
+                    `<option value="${option}">${option || 'ทั้งหมด'}</option>`
+                ).join('');
+            }
+            
+            if (searchViolationSelect) {
+                searchViolationSelect.innerHTML = violationOptions.map(option => 
+                    `<option value="${option}">${option || 'ทั้งหมด'}</option>`
+                ).join('');
+            }
+            
+            if (positionSelect) {
+                positionSelect.innerHTML = positionOptions.map(option => 
+                    `<option value="${option}">${option || 'เลือกตำแหน่ง'}</option>`
+                ).join('');
+            }
+            
+            console.log('Form ready - dropdowns loaded for position, actionTaken, and search fields');
+        }
+
+        // แสดงฟอร์ม
+        function showForm() {
+            clearAlert('formAlert');
+            document.getElementById('dataEntrySection').style.display = 'block';
+            document.getElementById('searchSection').style.display = 'none';
+            document.getElementById('studentForm').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // แสดงการค้นหา (แก้ไขให้โหลดข้อมูลทันที)
+        function showSearch() {
+            clearAlert('formAlert');
+            document.getElementById('dataEntrySection').style.display = 'none';
+            document.getElementById('searchSection').style.display = 'block';
+            document.getElementById('searchSection').scrollIntoView({ behavior: 'smooth' });
+            
+            // ล้างฟิลด์ค้นหา
+            document.getElementById('searchName').value = '';
+            document.getElementById('searchClass').value = '';
+            document.getElementById('searchViolationType').value = '';
+            
+            // โหลดข้อมูลทั้งหมดทันทีเมื่อเปิดหน้าค้นหา
+            loadAllDataOnPageLoad();
+        }
+
+        // ฟังก์ชันโหลดข้อมูลเมื่อเปิดหน้า
+        async function loadAllDataOnPageLoad() {
+            console.log('Loading all data on page load');
+            
+            // แสดงข้อความกำลังโหลด
+            document.getElementById('searchResults').innerHTML = 
+                '<div style="text-align: center; padding: 40px; color: #4f6ef7;"><div class="loading"></div><h4 style="margin-top: 15px;">กำลังโหลดข้อมูล...</h4></div>';
+            
+            try {
+                const result = await readGoogleSheet(GOOGLE_CONFIG.SHEETS.DATA);
+                console.log('Initial data load result:', result);
+                
+                if (result && result.success) {
+                    allStudentsData = result.data || [];
+                    if (allStudentsData.length > 0) {
+                        displaySearchResults(allStudentsData);
+                    } else {
+                        document.getElementById('searchResults').innerHTML = 
+                            '<div style="text-align: center; padding: 40px; color: #666;"><h4>ยังไม่มีข้อมูลในระบบ</h4><p>กรุณาบันทึกข้อมูลนักเรียนก่อนเพื่อดูตัวอย่างการค้นหา</p></div>';
+                    }
+                } else {
+                    document.getElementById('searchResults').innerHTML = 
+                        `<div style="text-align: center; padding: 40px; color: #dc2626;"><h4>เกิดข้อผิดพลาด: ${result ? result.message : 'ไม่ได้รับข้อมูลจากเซิร์ฟเวอร์'}</h4></div>`;
+                }
+            } catch (error) {
+                console.error('Initial data load error:', error);
+                document.getElementById('searchResults').innerHTML = 
+                    '<div style="text-align: center; padding: 40px; color: #dc2626;"><h4>เกิดข้อผิดพลาดในการโหลดข้อมูล</h4><p>โปรดตรวจสอบการเชื่อมต่อ Google Sheets</p></div>';
+            }
+        }
+
+        // เก็บข้อมูลทั้งหมดไว้ใช้กรอง
+        let allStudentsData = [];
+
+        // ค้นหาข้อมูลนักเรียน (ปรับให้กรองจากข้อมูลที่มีแล้ว)
+        function searchStudents() {
+            const searchName = document.getElementById('searchName').value.trim();
+            const searchClass = document.getElementById('searchClass').value;
+            const searchViolationType = document.getElementById('searchViolationType').value;
+            
+            console.log('Search initiated with:', {searchName, searchClass, searchViolationType});
+            
+            // กรองข้อมูลจาก allStudentsData
+            let filteredData = allStudentsData;
+            
+            // กรองตามชื่อ
+            if (searchName) {
+                filteredData = filteredData.filter(student => {
+                    const studentName = ((student['คำนำหน้า'] || '') + ' ' + (student['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || '')).toLowerCase();
+                    return studentName.includes(searchName.toLowerCase());
+                });
+            }
+            
+            // กรองตามชั้น
+            if (searchClass) {
+                filteredData = filteredData.filter(student => student['ชั้น'] === searchClass);
+            }
+            
+            // กรองตามประเภทการกระทำผิด
+            if (searchViolationType) {
+                filteredData = filteredData.filter(student => student['กรณีที่กระทำความผิด'] === searchViolationType);
+            }
+            
+            // แสดงผลลัพธ์
+            displaySearchResults(filteredData);
+            
+            // แสดงข้อความผลการค้นหา
+            if (searchName || searchClass || searchViolationType) {
+                if (filteredData.length > 0) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'ค้นหาสำเร็จ!',
+                        text: `พบข้อมูล ${filteredData.length} รายการ`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        iconColor: '#059669'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'ไม่พบข้อมูล',
+                        text: 'ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา',
+                        confirmButtonColor: '#4f6ef7'
+                    });
+                }
+            }
+        } // ปิด searchStudents function
+
+        // โหลดข้อมูลทั้งหมด (แก้ไขใหม่)
+        async function loadAllData() {
+            const searchBtn = document.getElementById('searchBtn');
+            const originalText = searchBtn.innerHTML;
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<span class="loading"></span> กำลังโหลด...';
+            
+            try {
+                const result = await readGoogleSheet(GOOGLE_CONFIG.SHEETS.DATA);
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = originalText;
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    allStudentsData = result.data;
+                    displaySearchResults(allStudentsData);
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'โหลดข้อมูลสำเร็จ',
+                        text: `แสดงข้อมูลทั้งหมด ${result.data.length} รายการ`,
+                        timer: 1500,
+                        showConfirmButton: false,
+                        iconColor: '#4f6ef7'
+                    });
+                } else {
+                    document.getElementById('searchResults').innerHTML = 
+                        '<div style="text-align: center; padding: 40px; color: #666;"><h4>ยังไม่มีข้อมูลในระบบ</h4></div>';
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'ไม่มีข้อมูล',
+                        text: result.message || 'ยังไม่มีข้อมูลในระบบ',
+                        confirmButtonColor: '#4f6ef7'
+                    });
+                }
+            } catch (error) {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = originalText;
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถโหลดข้อมูลได้',
+                    confirmButtonColor: '#dc2626'
+                });
+                console.error('Load All Data Error:', error);
+            }
+        }
+
+        // แสดงผลการค้นหา (แก้ไขให้แสดงข้อมูลครบทุกคอลั่มน์)
+        function displaySearchResults(students) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            let html = `
+                <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <h4 style="color: #4f6ef7; margin-bottom: 20px; text-align: center;">
+                        📊 ข้อมูลการกระทำผิดของนักเรียน (${students.length} รายการ)
+                    </h4>
+            `;
+            
+            if (students.length === 0) {
+                html += '<div style="text-align: center; padding: 40px; color: #666;"><h4>ไม่พบข้อมูล</h4></div>';
+            } else {
+                // แสดงข้อมูลแต่ละรายการในรูปแบบตาราง
+                students.forEach((student, index) => {
+                    const isEven = index % 2 === 0;
+                    const bgColor = isEven ? '#f8fafc' : '#ffffff';
+                    
+                    html += `
+                        <div style="background: ${bgColor}; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; margin-bottom: 15px; border-left: 4px solid #4f6ef7;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <!-- ข้อมูลนักเรียน -->
+                                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <h5 style="color: #4f6ef7; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
+                                        👨‍🎓 ข้อมูลนักเรียน
+                                    </h5>
+                                    <div style="line-height: 1.6; font-size: 14px;">
+                                        <div><strong>ชื่อ:</strong> ${student['คำนำหน้า'] || ''} ${student['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}</div>
+                                        <div><strong>ชั้น:</strong> ${student['ชั้น'] || '-'}</div>
+                                        <div><strong>ห้อง:</strong> ${student['ห้อง'] || '-'}</div>
+                                        <div><strong>เบอร์โทร:</strong> ${student['เบอร์โทรศัพท์'] || '-'}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- ข้อมูลการกระทำผิด -->
+                                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <h5 style="color: #dc2626; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
+                                        ⚠️ ข้อมูลการกระทำผิด
+                                    </h5>
+                                    <div style="line-height: 1.6; font-size: 14px;">
+                                        <div><strong>กรณี:</strong> ${student['กรณีที่กระทำความผิด'] || '-'}</div>
+                                        <div><strong>วันที่กระทำผิด:</strong> ${student['ว/ด/ป กระทำความผิด'] || '-'}</div>
+                                        <div><strong>การดำเนินการ:</strong> ${student['ดำเนินการ'] || '-'}</div>
+                                        <div><strong>คะแนนที่ตัด:</strong> <span style="color: #dc2626; font-weight: bold;">${student['ตัดคะเนน (จำนวนคะแนน)'] || '0'} คะแนน</span></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- ข้อมูลผู้ปกครองและผู้บันทึก -->
+                                <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                    <h5 style="color: #059669; margin-bottom: 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">
+                                        👥 ข้อมูลอื่นๆ
+                                    </h5>
+                                    <div style="line-height: 1.6; font-size: 14px;">
+                                        <div><strong>ผู้ปกครอง:</strong> ${student['ข้อมูลผู้ปกครอง (มีคำนำหน้า)'] || '-'}</div>
+                                        <div><strong>เบอร์ผู้ปกครอง:</strong> ${student['เบอร์โทรผู้ปกครอง'] || '-'}</div>
+                                        <div><strong>ผู้บันทึก:</strong> ${student['ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)'] || '-'}</div>
+                                        <div><strong>ตำแหน่ง:</strong> ${student['ตำแหน่ง'] || '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- บรรทัดสุดท้าย: วันที่บันทึกและปุ่มจัดการ -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f1f5f9; border-radius: 6px; margin-top: 10px;">
+                                <div style="font-size: 12px; color: #64748b;">
+                                    📅 บันทึกเมื่อ: ${student['ประทับเวลา'] || '-'}
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button onclick="editRecord(${index})" 
+                                            style="background: #4f6ef7; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#3b5cf0'" 
+                                            onmouseout="this.style.background='#4f6ef7'">
+                                        ✏️ แก้ไข
+                                    </button>
+                                    <button onclick="deleteRecord(${index})" 
+                                            style="background: #dc2626; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s;"
+                                            onmouseover="this.style.background='#b91c1c'" 
+                                            onmouseout="this.style.background='#dc2626'">
+                                        🗑️ ลบ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            html += `
+                </div>
+                <div style="text-align: center; margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 8px;">
+                    <small style="color: #64748b;">
+                        📋 แสดงผลทั้งหมด ${students.length} รายการ | 
+                        📅 อัปเดตล่าสุด: ${new Date().toLocaleString('th-TH')}
+                    </small>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // แสดงข้อความแจ้งเตือน
+        function showAlert(elementId, message, type) {
+            const alertElement = document.getElementById(elementId);
+            alertElement.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => clearAlert(elementId), 5000);
+        }
+
+        // ล้างข้อความแจ้งเตือน
+        function clearAlert(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        // *** ฟังก์ชันจัดการรายการ ***
+
+        // แก้ไขรายการ
+        async function editRecord(index) {
+            if (!allStudentsData || index < 0 || index >= allStudentsData.length) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่พบข้อมูลที่ต้องการแก้ไข',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const record = allStudentsData[index];
+            console.log('Editing record:', record);
+
+            // แสดงฟอร์มแก้ไขใน SweetAlert2
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ แก้ไขข้อมูลการกระทำผิด',
+                html: `
+                    <div style="text-align: left; max-height: 500px; overflow-y: auto;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <!-- ข้อมูลนักเรียน -->
+                            <div>
+                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">คำนำหน้า:</label>
+                                <select id="edit-prefix" class="swal2-input" style="margin: 0; width: 100%;">
+                                    <option value="">เลือกคำนำหน้า</option>
+                                    <option value="เด็กชาย" ${(record['คำนำหน้า'] === 'เด็กชาย') ? 'selected' : ''}>เด็กชาย</option>
+                                    <option value="เด็กหญิง" ${(record['คำนำหน้า'] === 'เด็กหญิง') ? 'selected' : ''}>เด็กหญิง</option>
+                                    <option value="นาย" ${(record['คำนำหน้า'] === 'นาย') ? 'selected' : ''}>นาย</option>
+                                    <option value="นางสาว" ${(record['คำนำหน้า'] === 'นางสาว') ? 'selected' : ''}>นางสาว</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ชื่อ-สกุล:</label>
+                                <input type="text" id="edit-name" class="swal2-input" value="${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}" style="margin: 0; width: 100%;" placeholder="กรอกชื่อ-สกุล">
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ชั้น:</label>
+                                <select id="edit-class" class="swal2-input" style="margin: 0; width: 100%;">
+                                    <option value="">เลือกชั้น</option>
+                                    ${['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'].map(cls => 
+                                        `<option value="${cls}" ${(record['ชั้น'] === cls) ? 'selected' : ''}>${cls}</option>`
+                                    ).join('')}
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">ห้อง:</label>
+                                <input type="text" id="edit-room" class="swal2-input" value="${record['ห้อง'] || ''}" style="margin: 0; width: 100%;" placeholder="เช่น 1, 2, 3">
+                            </div>
+                            <div>
+                                <label style="font-weight: bold; color: #4f6ef7; margin-bottom: 5px; display: block;">เบอร์โทร:</label>
+                                <input type="tel" id="edit-phone" class="swal2-input" value="${record['เบอร์โทรศัพท์'] || ''}" style="margin: 0; width: 100%;" placeholder="0812345678">
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลการกระทำผิด -->
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-bottom: 15px;">
+                            <h4 style="color: #dc2626; margin-bottom: 10px;">⚠️ ข้อมูลการกระทำผิด</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">กรณีที่กระทำผิด:</label>
+                                    <select id="edit-violation" class="swal2-input" style="margin: 0; width: 100%;">
+                                        <option value="">เลือกกรณี</option>
+                                        ${['มาสายเรียน', 'ขาดเรียน', 'ไม่ส่งการบ้าน', 'แต่งกายไม่เหมาะสม', 'ทำให้เกิดเสียงรบกวน', 'ใช้โทรศัพท์ในห้องเรียน', 'ก่อให้เกิดความเดือดร้อน', 'อื่นๆ'].map(violation => 
+                                            `<option value="${violation}" ${(record['กรณีที่กระทำความผิด'] === violation) ? 'selected' : ''}>${violation}</option>`
+                                        ).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">วันที่กระทำผิด:</label>
+                                    <input type="date" id="edit-violation-date" class="swal2-input" value="${record['ว/ด/ป กระทำความผิด'] || ''}" style="margin: 0; width: 100%;">
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">การดำเนินการ:</label>
+                                    <textarea id="edit-action" class="swal2-input" style="margin: 0; width: 100%; min-height: 60px;" placeholder="ระบุการดำเนินการที่ได้ทำ">${record['ดำเนินการ'] || ''}</textarea>
+                                </div>
+                                <div>
+                                    <label style="font-weight: bold; color: #dc2626; margin-bottom: 5px; display: block;">คะแนนที่ตัด:</label>
+                                    <input type="number" id="edit-points" class="swal2-input" value="${record['ตัดคะเนน (จำนวนคะแนน)'] || '0'}" style="margin: 0; width: 100%;" min="0" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ข้อมูลผู้ปกครอง -->
+                        <div style="border-top: 1px solid #e2e8f0; padding-top: 15px; margin-bottom: 15px;">
+                            <h4 style="color: #059669; margin-bottom: 10px;">👥 ข้อมูลผู้ปกครอง</h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label style="font-weight: bold; color: #059669; margin-bottom: 5px; display: block;">ชื่อผู้ปกครอง:</label>
+                                    <input type="text" id="edit-guardian" class="swal2-input" value="${record['ข้อมูลผู้ปกครอง (มีคำนำหน้า)'] || ''}" style="margin: 0; width: 100%;" placeholder="นาย/นาง/นางสาว ชื่อ สกุล">
+                                </div>
+                                <div>
+                                    <label style="font-weight: bold; color: #059669; margin-bottom: 5px; display: block;">เบอร์โทรผู้ปกครอง:</label>
+                                    <input type="tel" id="edit-guardian-phone" class="swal2-input" value="${record['เบอร์โทรผู้ปกครอง'] || ''}" style="margin: 0; width: 100%;" placeholder="0812345678">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                width: '800px',
+                showCancelButton: true,
+                confirmButtonText: '💾 บันทึกการแก้ไข',
+                cancelButtonText: '❌ ยกเลิก',
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#6b7280',
+                focusConfirm: false,
+                preConfirm: () => {
+                    return {
+                        prefix: document.getElementById('edit-prefix').value,
+                        name: document.getElementById('edit-name').value,
+                        class: document.getElementById('edit-class').value,
+                        room: document.getElementById('edit-room').value,
+                        phone: document.getElementById('edit-phone').value,
+                        violation: document.getElementById('edit-violation').value,
+                        violationDate: document.getElementById('edit-violation-date').value,
+                        action: document.getElementById('edit-action').value,
+                        points: document.getElementById('edit-points').value,
+                        guardian: document.getElementById('edit-guardian').value,
+                        guardianPhone: document.getElementById('edit-guardian-phone').value
+                    };
+                }
+            });
+
+            if (formValues) {
+                // ยืนยันการแก้ไข
+                const confirmResult = await Swal.fire({
+                    title: 'ยืนยันการแก้ไข?',
+                    text: 'คุณต้องการบันทึกการแก้ไขนี้หรือไม่?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#059669',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'ยืนยัน',
+                    cancelButtonText: 'ยกเลิก'
+                });
+
+                if (confirmResult.isConfirmed) {
+                    await updateRecordInSheet(index, formValues);
+                }
+            }
+        }
+
+        // ลบรายการ
+        async function deleteRecord(index) {
+            if (!allStudentsData || index < 0 || index >= allStudentsData.length) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่พบข้อมูลที่ต้องการลบ',
+                    confirmButtonColor: '#dc2626'
+                });
+                return;
+            }
+
+            const record = allStudentsData[index];
+            const studentName = `${record['คำนำหน้า'] || ''} ${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}`.trim();
+
+            const result = await Swal.fire({
+                title: '🗑️ ยืนยันการลบ',
+                html: `
+                    <div style="text-align: left; padding: 20px;">
+                        <p><strong>คุณต้องการลบรายการนี้หรือไม่?</strong></p>
+                        <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                            <p style="margin: 0; color: #dc2626;"><strong>ชื่อ:</strong> ${studentName}</p>
+                            <p style="margin: 5px 0 0 0; color: #dc2626;"><strong>กรณี:</strong> ${record['กรณีที่กระทำความผิด'] || '-'}</p>
+                        </div>
+                        <p style="color: #dc2626; font-size: 14px; margin-top: 15px;">
+                            ⚠️ <strong>คำเตือน:</strong> การลบนี้ไม่สามารถยกเลิกได้
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: '🗑️ ลบรายการ',
+                cancelButtonText: '❌ ยกเลิก'
+            });
+
+            if (result.isConfirmed) {
+                await deleteRecordFromSheet(index);
+            }
+        }
+
+        // อัปเดตรายการใน Google Sheets
+        async function updateRecordInSheet(index, formData) {
+            try {
+                Swal.fire({
+                    title: 'กำลังบันทึกการแก้ไข...',
+                    html: '<div class="loading"></div>',
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                });
+
+                const token = await getServiceAccountToken();
+                
+                // คำนวณแถวใน Google Sheets (index + 2 เพราะ index 0 = แถว 2, แถว 1 คือ header)
+                const rowNumber = index + 2;
+                
+                // สร้างข้อมูลที่จะอัปเดต
+                const updateData = [
+                    allStudentsData[index]['ประทับเวลา'] || new Date().toLocaleString('th-TH'), // เก็บเวลาเดิม
+                    formData.prefix,
+                    formData.name,
+                    formData.class,
+                    formData.room,
+                    formData.phone,
+                    formData.violation,
+                    formData.violationDate,
+                    formData.action,
+                    formData.points,
+                    formData.guardian,
+                    formData.guardianPhone,
+                    currentUser ? currentUser.fullName || currentUser.username : 'ระบบ',
+                    currentUser ? currentUser.role : 'ผู้ใช้'
+                ];
+
+                // อัปเดตใน Google Sheets
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${GOOGLE_CONFIG.SHEETS.DATA}!A${rowNumber}:N${rowNumber}?valueInputOption=RAW`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            values: [updateData]
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                // อัปเดตข้อมูลใน cache
+                allStudentsData[index] = {
+                    'ประทับเวลา': updateData[0],
+                    'คำนำหน้า': updateData[1],
+                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': updateData[2],
+                    'ชั้น': updateData[3],
+                    'ห้อง': updateData[4],
+                    'เบอร์โทรศัพท์': updateData[5],
+                    'กรณีที่กระทำความผิด': updateData[6],
+                    'ว/ด/ป กระทำความผิด': updateData[7],
+                    'ดำเนินการ': updateData[8],
+                    'ตัดคะเนน (จำนวนคะแนน)': updateData[9],
+                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': updateData[10],
+                    'เบอร์โทรผู้ปกครอง': updateData[11],
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': updateData[12],
+                    'ตำแหน่ง': updateData[13]
+                };
+
+                // รีเฟรชการแสดงผล
+                displaySearchResults(allStudentsData);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'แก้ไขสำเร็จ!',
+                    text: 'บันทึกการแก้ไขเรียบร้อยแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    iconColor: '#059669'
+                });
+
+            } catch (error) {
+                console.error('Error updating record:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'แก้ไขไม่สำเร็จ',
+                    text: 'เกิดข้อผิดพลาดในการบันทึกการแก้ไข: ' + error.message,
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+        }
+
+        // ลบรายการจาก Google Sheets
+        async function deleteRecordFromSheet(index) {
+            try {
+                Swal.fire({
+                    title: 'กำลังลบรายการ...',
+                    html: '<div class="loading"></div>',
+                    showConfirmButton: false,
+                    allowOutsideClick: false
+                });
+
+                const token = await getServiceAccountToken();
+                
+                // คำนวณแถวใน Google Sheets (index + 2 เพราะ index 0 = แถว 2, แถว 1 คือ header)
+                const rowNumber = index + 2;
+                
+                // ลบแถวใน Google Sheets
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}:batchUpdate`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            requests: [
+                                {
+                                    deleteDimension: {
+                                        range: {
+                                            sheetId: 0, // ใช้ sheet แรก (data sheet)
+                                            dimension: 'ROWS',
+                                            startIndex: rowNumber - 1, // 0-based index
+                                            endIndex: rowNumber
+                                        }
+                                    }
+                                }
+                            ]
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                // ลบข้อมูลใน cache
+                allStudentsData.splice(index, 1);
+
+                // รีเฟรชการแสดงผล
+                displaySearchResults(allStudentsData);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ลบสำเร็จ!',
+                    text: 'ลบรายการเรียบร้อยแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    iconColor: '#059669'
+                });
+
+            } catch (error) {
+                console.error('Error deleting record:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ลบไม่สำเร็จ',
+                    text: 'เกิดข้อผิดพลาดในการลบรายการ: ' + error.message,
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+        }
+
+        // จัดการการส่งฟอร์ม
+        document.getElementById('studentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            
+            // รวบรวมข้อมูลจากฟอร์ม
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // จัดรูปแบบเบอร์โทรศัพท์ให้เป็นตัวเลขอย่างเดียว
+            if (data.studentPhone) {
+                data.studentPhone = data.studentPhone.replace(/\D/g, ''); // เอาเฉพาะตัวเลข
+            }
+            if (data.guardianPhone) {
+                data.guardianPhone = data.guardianPhone.replace(/\D/g, ''); // เอาเฉพาะตัวเลข
+            }
+            
+            // เพิ่มข้อมูลเวลาและผู้บันทึก
+            data.timestamp = new Date().toLocaleString('th-TH');
+            
+            // ใช้ข้อมูลผู้ใช้ปัจจุบันถ้าไม่ได้กรอก registeredBy
+            if (!data.registeredBy && currentUser) {
+                data.registeredBy = currentUser.username;
+            }
+            
+            // แสดง loading
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> กำลังบันทึก...';
+            
+            try {
+                // ส่งข้อมูลไป Google Sheets API
+                const result = await writeToGoogleSheet(data);
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '💾 บันทึกการกระทำผิด';
+                
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกสำเร็จ!',
+                        text: 'บันทึกข้อมูลการกระทำผิดเรียบร้อยแล้ว',
+                        timer: 2000,
+                        showConfirmButton: false,
+                        iconColor: '#059669'
+                    }).then(() => {
+                        document.getElementById('studentForm').reset();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'บันทึกไม่สำเร็จ',
+                        text: result.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล',
+                        confirmButtonColor: '#dc2626'
+                    });
+                }
+            } catch (error) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '💾 บันทึกการกระทำผิด';
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับ Google Sheets ได้',
+                    confirmButtonColor: '#dc2626'
+                });
+                console.error('Submit Error:', error);
+            }
+        }); // ปิด addEventListener('submit')
+
+        // เริ่มต้นระบบ - ตรวจสอบล็อกอินทันที
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
+            checkLoginStatus();
+        });
+        
+        window.addEventListener('load', function() {
+            console.log('Window Loaded');
+            // Fallback เผื่อ DOMContentLoaded ไม่ทำงาน
+            if (!isLoggedIn) {
+                checkLoginStatus();
+            }
+        });
+        
+        // Emergency fallback
+        setTimeout(function() {
+            console.log('Emergency fallback check');
+            if (!isLoggedIn && !document.body.classList.contains('loaded')) {
+                checkLoginStatus();
+            }
+        }, 2000);
+        
+    </script>
+</body>
+</html>

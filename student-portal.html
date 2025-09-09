@@ -483,6 +483,59 @@
             box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.1) !important;
         }
 
+        /* Sample Data Popup Styles */
+        .sample-data-popup {
+            font-family: 'Sarabun', sans-serif !important;
+        }
+
+        .sample-data-popup table {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+            border-radius: 10px !important;
+            overflow: hidden !important;
+        }
+
+        .sample-data-popup th {
+            font-weight: 600 !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+        }
+
+        .sample-data-popup tbody tr:hover {
+            background: #e8f4fd !important;
+            transition: background-color 0.2s ease !important;
+        }
+        
+        /* Student Detail Popup Styles */
+        .student-detail-popup {
+            font-family: 'Sarabun', sans-serif !important;
+        }
+        
+        .student-detail-popup .swal2-html-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .student-detail-popup table tbody tr:hover {
+            background-color: #fff3e0 !important;
+            transform: translateX(2px);
+            transition: all 0.2s ease;
+        }
+        
+        /* Student Detail Popup Styles */
+        .student-detail-popup {
+            font-family: 'Sarabun', sans-serif !important;
+        }
+        
+        .student-detail-popup .swal2-html-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .student-detail-popup table tbody tr:hover {
+            background-color: #fff3e0 !important;
+            transform: translateX(2px);
+            transition: all 0.2s ease;
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -550,6 +603,7 @@
             <ul>
                 <li>กรอกเลขประจำตัวนักเรียน หรือ เลขประจำตัวประชาชน</li>
                 <li>กดปุ่ม "ค้นหาข้อมูล" เพื่อแสดงผลข้อมูล</li>
+                <li>กดปุ่ม "ดูตัวอย่าง" เพื่อดูตัวอย่างข้อมูลนักเรียน 10 คนแรก</li>
                 <li>ระบบจะแสดงคะแนนความประพฤติและประวัติการกระทำผิด (ถ้ามี)</li>
                 <li>หากไม่พบข้อมูล กรุณาตรวจสอบเลขประจำตัวให้ถูกต้อง</li>
             </ul>
@@ -571,6 +625,12 @@
                 </button>
                 <button class="btn btn-secondary" onclick="clearSearch()" id="clearBtn">
                     🗑️ ล้าง
+                </button>
+                <button class="btn btn-info" onclick="showSampleData()" id="sampleBtn">
+                    👁️ ดูตัวอย่าง
+                </button>
+                <button class="btn btn-success" onclick="testSweetAlert2()" id="testBtn">
+                    🧪 ทดสอบ
                 </button>
             </div>
         </div>
@@ -889,6 +949,102 @@
             });
         }
 
+        // Show sample data with SweetAlert2
+        async function showSampleData() {
+            if (connectionStatus !== 'online') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'ไม่สามารถดูตัวอย่างได้',
+                    text: 'ระบบไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonColor: '#e53935'
+                });
+                return;
+            }
+
+            if (allStudentsData.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'ไม่มีข้อมูล',
+                    text: 'ยังไม่มีข้อมูลนักเรียนในระบบ',
+                    confirmButtonColor: '#3949ab'
+                });
+                return;
+            }
+
+            // สร้างข้อมูลตัวอย่าง 10 รายการ
+            const sampleStudents = allStudentsData
+                .slice(0, 10) // เอา 10 รายการแรก
+                .map((student, index) => {
+                    const studentWithPoints = addPointsToStudent(student);
+                    const fullName = `${student['คำนำหน้าชื่อ'] || ''}${student['ชื่อ'] || ''} ${student['นามสกุล'] || ''}`.trim();
+                    const points = studentWithPoints.points.remaining;
+                    const pointsEmoji = points >= 80 ? '🟢' : points >= 50 ? '🟡' : '🔴';
+                    const statusText = points >= 80 ? 'ดีมาก' : points >= 50 ? 'ต้องระวัง' : 'อันตราย';
+                    
+                    return `
+                        <tr style="background: ${index % 2 === 0 ? '#f8f9fa' : 'white'};">
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${index + 1}</td>
+                            <td style="padding: 12px; border: 1px solid #dee2e6;">
+                                <strong>${fullName}</strong><br>
+                                <small style="color: #6c757d;">รหัส: ****${(student['เลขประจำตัวนักเรียน'] || '').slice(-4)}</small>
+                            </td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">${student['ชั้น'] || '-'}${student['ห้อง'] ? '/' + student['ห้อง'] : ''}</td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                                ${pointsEmoji} <strong>${points}</strong><br>
+                                <small style="color: ${points >= 80 ? '#43a047' : points >= 50 ? '#ff9800' : '#e53935'};">
+                                    ${statusText}
+                                </small>
+                            </td>
+                            <td style="padding: 12px; text-align: center; border: 1px solid #dee2e6;">
+                                ${studentWithPoints.violations.length}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+            Swal.fire({
+                title: '📊 ตัวอย่างข้อมูลนักเรียน',
+                html: `
+                    <div style="max-height: 500px; overflow-y: auto; margin: 20px 0;">
+                        <table style="width: 100%; border-collapse: collapse; font-family: 'Sarabun', sans-serif;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                    <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6;">ลำดับ</th>
+                                    <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6;">ชื่อ-นามสกุล</th>
+                                    <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6;">ชั้น/ห้อง</th>
+                                    <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6;">คะแนน</th>
+                                    <th style="padding: 15px; text-align: center; border: 1px solid #dee2e6;">การกระทำผิด</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sampleStudents}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="background: #e3f2fd; border-radius: 10px; padding: 15px; margin-top: 20px; text-align: center;">
+                        <h4 style="color: #1976d2; margin-bottom: 10px;">💡 คำแนะนำ</h4>
+                        <p style="color: #1565c0; margin: 5px 0; font-size: 14px;">
+                            🟢 คะแนน 80+ = ความประพฤติดีมาก<br>
+                            🟡 คะแนน 50-79 = ต้องปรับปรุงความประพฤติ<br>
+                            🔴 คะแนน <50 = ความประพฤติอยู่ในระดับอันตราย
+                        </p>
+                        <hr style="margin: 15px 0; border: none; border-top: 1px solid #bbdefb;">
+                        <p style="color: #1565c0; font-size: 13px; margin: 0;">
+                            📝 นี่เป็นเพียงตัวอย่างข้อมูล 10 รายการแรก<br>
+                            🔍 ใช้การค้นหาด้านบนเพื่อดูข้อมูลของคุณ
+                        </p>
+                    </div>
+                `,
+                width: '800px',
+                confirmButtonText: 'ปิด',
+                confirmButtonColor: '#3949ab',
+                showCloseButton: true,
+                customClass: {
+                    popup: 'sample-data-popup'
+                }
+            });
+        }
+
         // Search student
         async function searchStudent() {
             const searchTerm = document.getElementById('searchInput').value.trim();
@@ -942,22 +1098,47 @@
 
         // Find student by ID or ID Card
         function findStudent(searchTerm) {
-            return allStudentsData.find(student => {
+            console.log('🔍 Searching for:', searchTerm);
+            console.log('📊 Total students:', allStudentsData.length);
+            
+            // Debug: แสดงตัวอย่างข้อมูล student 5 คนแรก
+            if (allStudentsData.length > 0) {
+                console.log('👤 Sample student data:', allStudentsData.slice(0, 5).map(s => ({
+                    studentId: s['เลขประจำตัวนักเรียน'],
+                    idCard: s['เลขประจำตัวประชาชน'],
+                    name: s['ชื่อ'],
+                    surname: s['นามสกุล']
+                })));
+            }
+            
+            const foundStudent = allStudentsData.find(student => {
                 const studentId = (student['เลขประจำตัวนักเรียน'] || '').toString().trim();
                 const idCard = (student['เลขประจำตัวประชาชน'] || '').toString().trim();
                 
+                console.log('🔄 Checking:', { studentId, idCard, searchTerm });
+                
                 return studentId === searchTerm || idCard === searchTerm;
             });
+            
+            console.log('✅ Found student:', foundStudent ? 'YES' : 'NO');
+            return foundStudent;
         }
 
         // Add points calculation to student
         function addPointsToStudent(student) {
             const fullName = (student['ชื่อ'] || '') + ' ' + (student['นามสกุล'] || '');
+            console.log('🧮 Calculating points for:', fullName);
             
             const violations = allViolationsData.filter(v => {
                 const violationName = v['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || '';
-                return violationName.includes(student['ชื่อ']) && violationName.includes(student['นามสกุล']);
+                const match = violationName.includes(student['ชื่อ']) && violationName.includes(student['นามสกุล']);
+                if (match) {
+                    console.log('🎯 Found violation match:', { violationName, studentName: fullName });
+                }
+                return match;
             });
+            
+            console.log('⚠️ Total violations found:', violations.length);
             
             const totalDeducted = violations.reduce((sum, v) => {
                 const points = v['ตัดคะแนน (จำนวนคะแนน)'] || v['ตัดคะเนน (จำนวนคะแนน)'] || 0;
@@ -965,6 +1146,13 @@
             }, 0);
             
             const remainingPoints = 100 - totalDeducted; // คะแนนเต็ม 100
+            
+            console.log('📊 Points calculation:', {
+                initial: 100,
+                deducted: totalDeducted,
+                remaining: remainingPoints,
+                violationsCount: violations.length
+            });
             
             return {
                 ...student,
@@ -979,72 +1167,228 @@
 
         // Display student information
         function displayStudent(student) {
-            const display = document.getElementById('studentDisplay');
-            const fullName = `${student['คำนำหน้าชื่อ'] || ''}${student['ชื่อ'] || ''} ${student['นามสกุล'] || ''}`.trim();
-            const points = student.points.remaining;
-            const pointsClass = getPointsClass(points);
+            console.log('🎯 displayStudent called with:', student);
             
-            let violationsHtml = '';
-            if (student.violations && student.violations.length > 0) {
-                violationsHtml = `
-                    <div class="violations-list">
-                        <h4>⚠️ ประวัติการกระทำผิด (${student.violations.length} รายการ)</h4>
-                        ${student.violations.map(violation => `
-                            <div class="violation-item">
-                                <div class="violation-date">${violation['ว/ด/ป กระทำความผิด'] || '-'}</div>
-                                <div class="violation-type">${violation['กรณีที่กระทำความผิด'] || '-'}</div>
-                                <div class="violation-action">${violation['ดำเนินการ'] || '-'}</div>
-                                <div class="violation-points">-${violation['ตัดคะแนน (จำนวนคะแนน)'] || violation['ตัดคะเนน (จำนวนคะแนน)'] || 0} คะแนน</div>
-                                <div style="clear: both;"></div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else {
-                violationsHtml = `
-                    <div style="text-align: center; padding: 20px; background: #e8f5e9; border-radius: 15px; margin-top: 20px;">
-                        <h4 style="color: #43a047; margin-bottom: 10px;">✅ ไม่มีประวัติการกระทำผิด</h4>
-                        <p style="color: #43a047; margin: 0;">ยินดีด้วย! คุณเป็นนักเรียนดี</p>
-                    </div>
-                `;
+            // ทดสอบ SweetAlert2 ขั้นพื้นฐานก่อน
+            console.log('🧪 Testing SweetAlert2...');
+            if (typeof Swal === 'undefined') {
+                console.error('❌ SweetAlert2 not loaded!');
+                alert('SweetAlert2 library is not loaded!');
+                return;
             }
             
+            // ทดสอบ popup ธรรมดาก่อน
+            try {
+                Swal.fire({
+                    title: 'ทดสอบ SweetAlert2',
+                    text: 'หาก popup นี้แสดง แสดงว่า SweetAlert2 ทำงานได้',
+                    icon: 'info',
+                    confirmButtonText: 'ดำเนินการต่อ'
+                }).then(() => {
+                    // แสดงข้อมูลนักเรียนจริง
+                    showStudentData(student);
+                });
+            } catch (error) {
+                console.error('❌ SweetAlert2 Test Error:', error);
+                alert('SweetAlert2 Error: ' + error.message);
+            }
+        }
+        
+        // ฟังก์ชันแสดงข้อมูลนักเรียนจริง
+        function showStudentData(student) {
+            try {
+                const fullName = `${student['คำนำหน้าชื่อ'] || ''}${student['ชื่อ'] || ''} ${student['นามสกุล'] || ''}`.trim();
+                const points = student.points.remaining;
+                const violationsCount = student.violations ? student.violations.length : 0;
+                
+                console.log('📋 Student display data:', {
+                    fullName,
+                    points,
+                    violationsCount,
+                    studentId: student['เลขประจำตัวนักเรียน'],
+                    class: student['ชั้น'],
+                    room: student['ห้อง']
+                });
+                
+                let statusClass = '';
+                let statusText = '';
+                let statusEmoji = '';
+                
+                if (points >= 80) {
+                    statusClass = 'excellent';
+                    statusText = 'ยอดเยี่ยม';
+                    statusEmoji = '🌟';
+                } else if (points >= 50) {
+                    statusClass = 'warning';
+                    statusText = 'ต้องปรับปรุง';
+                    statusEmoji = '⚠️';
+                } else {
+                    statusClass = 'danger';
+                    statusText = 'อันตราย';
+                    statusEmoji = '🚨';
+                }
+                
+                console.log('🎨 Status determined:', { statusClass, statusText, statusEmoji, points });
+                
+                // สร้างตารางประวัติการกระทำผิด (ถ้ามี)
+                let violationsTable = '';
+                if (student.violations && student.violations.length > 0) {
+                    console.log('📊 Creating violations table for', student.violations.length, 'violations');
+                    
+                    violationsTable = `
+                        <div style="margin-top: 20px;">
+                            <h4 style="color: #d32f2f; margin-bottom: 15px;">⚠️ ประวัติการกระทำผิด (${student.violations.length} รายการ)</h4>
+                            <div style="max-height: 250px; overflow-y: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <thead>
+                                        <tr style="background: #f5f5f5;">
+                                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">วันที่</th>
+                                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">กรณี</th>
+                                            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">การดำเนินการ</th>
+                                            <th style="padding: 8px; border: 1px solid #ddd; text-align: center;">หักคะแนน</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${student.violations.map(violation => `
+                                            <tr>
+                                                <td style="padding: 8px; border: 1px solid #ddd;">${violation['ว/ด/ป กระทำความผิด'] || '-'}</td>
+                                                <td style="padding: 8px; border: 1px solid #ddd;">${violation['กรณีที่กระทำความผิด'] || '-'}</td>
+                                                <td style="padding: 8px; border: 1px solid #ddd;">${violation['ดำเนินการ'] || '-'}</td>
+                                                <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #d32f2f; font-weight: bold;">-${violation['ตัดคะแนน (จำนวนคะแนน)'] || violation['ตัดคะเนน (จำนวนคะแนน)'] || 0}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    console.log('✅ No violations - creating good student message');
+                    violationsTable = `
+                        <div style="margin-top: 20px; text-align: center; padding: 20px; background: linear-gradient(135deg, #e8f5e8, #c8e6c9); border-radius: 15px;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">✅</div>
+                            <h4 style="color: #2e7d32; margin-bottom: 8px;">ไม่มีประวัติการกระทำผิด</h4>
+                            <p style="color: #2e7d32; margin: 0; font-size: 14px;">ยินดีด้วย! คุณเป็นนักเรียนดี</p>
+                        </div>
+                    `;
+                }
+                
+                console.log('🔧 About to show SweetAlert2...');
+                
+                Swal.fire({
+                title: `👨‍🎓 ข้อมูลนักเรียน`,
+                html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <div style="text-align: center; margin-bottom: 25px;">
+                            <div style="display: inline-block; width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 36px; font-weight: bold; line-height: 90px; margin-bottom: 15px;">
+                                ${fullName.charAt(0)}
+                            </div>
+                            <h3 style="margin: 0; color: #333; font-size: 24px; font-weight: bold;">${fullName}</h3>
+                            <p style="margin: 8px 0; color: #666; font-size: 16px;">ชั้น ${student['ชั้น'] || '-'}${student['ห้อง'] ? '/' + student['ห้อง'] : ''}</p>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-radius: 10px;">
+                                <div style="font-size: 20px; font-weight: bold;">${student.points.initial}</div>
+                                <div style="font-size: 12px;">คะแนนเริ่มต้น</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #ff6b6b, #ee5a52); color: white; border-radius: 10px;">
+                                <div style="font-size: 20px; font-weight: bold;">${student.points.deducted}</div>
+                                <div style="font-size: 12px;">คะแนนที่หัก</div>
+                            </div>
+                            <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #ffa726, #fb8c00); color: white; border-radius: 10px;">
+                                <div style="font-size: 20px; font-weight: bold;">${points}</div>
+                                <div style="font-size: 12px;">คะแนนคงเหลือ</div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 15px; margin-bottom: 15px;">
+                            <div style="font-size: 24px;">
+                                <span style="font-size: 32px; margin-right: 12px;">${statusEmoji}</span>
+                                <span style="font-weight: bold;">${statusText}</span>
+                            </div>
+                            <div style="font-size: 14px; margin-top: 8px;">${getPointsDescription(points)}</div>
+                        </div>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 14px;">
+                                <div><strong>เลขประจำตัวนักเรียน:</strong><br>${student['เลขประจำตัวนักเรียน'] || '-'}</div>
+                                <div><strong>เลขประจำตัวประชาชน:</strong><br>${student['เลขประจำตัวประชาชน'] ? '****' + student['เลขประจำตัวประชาชน'].slice(-4) : '-'}</div>
+                            </div>
+                        </div>
+                        
+                        ${violationsTable}
+                    </div>
+                `,
+                width: '700px',
+                showConfirmButton: true,
+                confirmButtonText: '🔄 ค้นหาใหม่',
+                confirmButtonColor: '#667eea',
+                allowOutsideClick: true,
+                customClass: {
+                    popup: 'student-detail-popup'
+                }
+            }).then((result) => {
+                console.log('✅ SweetAlert2 closed:', result);
+                if (result.isConfirmed) {
+                    // Clear search when user clicks "ค้นหาใหม่"
+                    document.getElementById('searchInput').value = '';
+                    document.getElementById('searchInput').focus();
+                }
+            }).catch((error) => {
+                console.error('❌ SweetAlert2 error:', error);
+            });
+            
+            // Clear the original display div
+            const display = document.getElementById('studentDisplay');
             display.innerHTML = `
-                <div class="student-card">
-                    <h3>
-                        👨‍🎓 ${fullName}
-                    </h3>
-                    <div class="student-info">
-                        <strong>เลขประจำตัวนักเรียน:</strong>
-                        <span>${student['เลขประจำตัวนักเรียน'] || '-'}</span>
-                    </div>
-                    <div class="student-info">
-                        <strong>เลขประจำตัวประชาชน:</strong>
-                        <span>${student['เลขประจำตัวประชาชน'] ? '****' + student['เลขประจำตัวประชาชน'].slice(-4) : '-'}</span>
-                    </div>
-                    <div class="student-info">
-                        <strong>ชั้น/ห้อง:</strong>
-                        <span>${student['ชั้น'] || '-'}${student['ห้อง'] ? '/' + student['ห้อง'] : ''}</span>
-                    </div>
-                    <div class="student-info">
-                        <strong>คะแนนเริ่มต้น:</strong>
-                        <span>${student.points.initial} คะแนน</span>
-                    </div>
-                    <div class="student-info">
-                        <strong>คะแนนที่ถูกหัก:</strong>
-                        <span style="color: #e53935;">-${student.points.deducted} คะแนน</span>
-                    </div>
-                    <div style="text-align: center; margin: 20px 0;">
-                        <div class="points-badge ${pointsClass}">
-                            คะแนนความประพฤติคงเหลือ: ${points} คะแนน
-                        </div>
-                        <div style="margin-top: 10px; color: #666; font-size: 0.9rem;">
-                            ${getPointsDescription(points)}
-                        </div>
-                    </div>
-                    ${violationsHtml}
+                <div class="no-data">
+                    <h3>✅ พบข้อมูลแล้ว</h3>
+                    <p>ข้อมูลแสดงใน popup ด้านบน</p>
+                    <div style="font-size: 3rem; margin: 20px 0;">🎉</div>
                 </div>
             `;
+            
+            } catch (error) {
+                console.error('❌ Error in showStudentData:', error);
+                
+                // Fallback: แสดงข้อมูลแบบธรรมดาถ้า SweetAlert2 ไม่ทำงาน
+                const fullName = `${student['คำนำหน้าชื่อ'] || ''}${student['ชื่อ'] || ''} ${student['นามสกุล'] || ''}`.trim();
+                const points = student.points ? student.points.remaining : 'N/A';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'พบข้อมูลนักเรียน',
+                    text: `${fullName || 'นักเรียน'} - คะแนนความประพฤติ: ${points}`,
+                    confirmButtonColor: '#3949ab'
+                });
+            }
+        }
+        
+        // ฟังก์ชันทดสอบ SweetAlert2
+        function testSweetAlert2() {
+            console.log('🧪 Testing SweetAlert2 directly...');
+            
+            if (typeof Swal === 'undefined') {
+                alert('❌ SweetAlert2 library not loaded!');
+                return;
+            }
+            
+            Swal.fire({
+                title: '🧪 ทดสอบ SweetAlert2',
+                html: `
+                    <div style="text-align: left; padding: 20px;">
+                        <h4>✅ SweetAlert2 ทำงานได้ปกติ!</h4>
+                        <p>หากคุณเห็น popup นี้ แสดงว่า SweetAlert2 พร้อมใช้งาน</p>
+                        <hr style="margin: 15px 0;">
+                        <small>หากระบบค้นหายังไม่ทำงาน อาจมีปัญหาในส่วนอื่น</small>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'เข้าใจแล้ว',
+                confirmButtonColor: '#3949ab',
+                width: '500px'
+            });
         }
 
         // Get points class for styling

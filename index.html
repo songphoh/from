@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบบันทึกการกระทำผิดของนักเรียน - หน้าหลัก</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/jpeg" href="22300.jpg">
+    <link rel="shortcut icon" type="image/jpeg" href="22300.jpg">
+    <link rel="apple-touch-icon" href="22300.jpg">
+    
     <!-- SweetAlert2 CSS และ JS -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- Load Config File -->
@@ -93,16 +99,41 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+        }
+
+        .header .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 15px;
+        }
+
+        .header .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            object-fit: cover;
+        }
+
+        .header .logo:hover {
+            transform: scale(1.05);
         }
 
         .header h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .header p {
             opacity: 0.9;
-            font-size: 14px;
+            font-size: 16px;
+            margin: 5px 0;
         }
 
         .form-container {
@@ -314,11 +345,21 @@
             }
             
             .header {
-                padding: 25px;
+                padding: 20px;
+            }
+            
+            .header .logo-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .header .logo {
+                width: 60px;
+                height: 60px;
             }
             
             .header h1 {
-                font-size: 22px;
+                font-size: 20px;
                 margin-bottom: 8px;
             }
             
@@ -504,6 +545,54 @@
 
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        .student-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid rgba(139,0,0,0.3);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.selected {
+            background: rgba(139,0,0,0.05);
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .suggestion-details {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .suggestion-id {
+            color: #8B0000;
+            font-weight: 600;
+            margin-left: 8px;
         }
 
         .loading {
@@ -956,8 +1045,16 @@
         <div id="mainSection" class="form-container active">
             <div class="header" style="position: relative;">
                 <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
-                <h1>ระบบบันทึกการกระทำผิดของนักเรียน</h1>
-                <p>จัดการข้อมูลการลงโทษและติดตามพฤติกรรมนักเรียน</p>
+                
+                <!-- Logo Section -->
+                <div class="logo-container">
+                    <img src="22300.jpg" alt="โรงเรียน" class="logo">
+                    <div>
+                        <h1>ระบบบันทึกการกระทำผิดของนักเรียน</h1>
+                        <p>จัดการข้อมูลการลงโทษและติดตามพฤติกรรมนักเรียน</p>
+                    </div>
+                </div>
+                
                 <p id="userInfo" style="font-size: 12px; opacity: 0.8; margin-top: 10px;"></p>
                 
                 <div class="btn-group" style="margin-top: 20px;">
@@ -997,8 +1094,14 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="studentId">เลขประจำตัวนักเรียน</label>
+                                <input type="text" id="studentId" name="studentId" placeholder="กรอกเลขประจำตัวนักเรียน เช่น 11032002792899" maxlength="14" required>
+                            </div>
+
+                            <div class="form-group" style="position: relative;">
                                 <label for="studentName">ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)</label>
-                                <input type="text" id="studentName" name="studentName" placeholder="กรอกชื่อ-นามสกุล" required>
+                                <input type="text" id="studentName" name="studentName" placeholder="กรอกชื่อ-นามสกุล หรือค้นหาจากฐานข้อมูล" required autocomplete="off">
+                                <div id="studentSuggestions" class="student-suggestions" style="display: none;"></div>
                             </div>
 
                             <div class="form-group">
@@ -1270,7 +1373,8 @@
             // กำหนดชื่อ Sheets ต่างๆ
             SHEETS: {
                 LOGIN: 'Login',  // แผ่นงานเก็บข้อมูลผู้ใช้
-                DATA: 'data'     // แผ่นงานเก็บข้อมูลการกระทำผิด
+                DATA: 'data',    // แผ่นงานเก็บข้อมูลการกระทำผิด
+                NAME: 'name'     // แผ่นงานเก็บข้อมูลรายชื่อนักศึกษา
             }
         };
 
@@ -1532,7 +1636,7 @@
                 
                 // ตรวจสอบว่ามี header แล้วหรือไม่
                 const existingData = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1`,
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:O1`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -1545,7 +1649,7 @@
 
                 // กำหนด headers สำหรับ sheet data ตามลำดับที่ถูกต้อง
                 const headers = [
-                    'ประทับเวลา', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
+                    'ประทับเวลา', 'เลขประจำตัวนักเรียน', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
                     'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
                     'ตัดคะเนน (จำนวนคะแนน)', 'ข้อมูลผู้ปกครอง (มีคำนำหน้า)', 'เบอร์โทรศัพท์', 'เบอร์โทรผู้ปกครอง', 
                     'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)', 'ตำแหน่ง'
@@ -1554,7 +1658,7 @@
                 // ถ้าไม่มี header ให้เพิ่ม
                 if (!existingResult.values || existingResult.values.length === 0) {
                     await fetch(
-                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:N1?valueInputOption=RAW`,
+                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:O1?valueInputOption=RAW`,
                         {
                             method: 'PUT',
                             headers: {
@@ -1591,19 +1695,20 @@
                 // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง (เริ่มจากคอลัมน์ A = ประทับเวลา)
                 const row = [
                     new Date().toLocaleString('th-TH'),               // a. ประทับเวลา  
-                    data.studentPrefix || '',                         // b. คำนำหน้า
-                    data.studentName || '',                           // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
-                    data.studentClass || '',                          // d. ชั้น
-                    data.studentRoom || '',                           // e. ห้อง
-                    data.violationType || '',                         // f. กรณีที่กระทำความผิด
-                    data.violationDate || '',                         // g. ว/ด/ป กระทำความผิด
-                    data.actionTaken || '',                           // h. ดำเนินการ
-                    data.pointsDeducted || '0',                       // i. ตัดคะเนน (จำนวนคะแนน)
-                    data.guardianName || '',                          // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
-                    "'" + formatPhoneNumber(data.studentPhone),       // k. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    "'" + formatPhoneNumber(data.guardianPhone),      // l. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    data.registeredBy || '',                          // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
-                    data.position || ''                               // n. ตำแหน่ง
+                    data.studentId || '',                             // b. เลขประจำตัวนักเรียน
+                    data.studentPrefix || '',                         // c. คำนำหน้า
+                    data.studentName || '',                           // d. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    data.studentClass || '',                          // e. ชั้น
+                    data.studentRoom || '',                           // f. ห้อง
+                    data.violationType || '',                         // g. กรณีที่กระทำความผิด
+                    data.violationDate || '',                         // h. ว/ด/ป กระทำความผิด
+                    data.actionTaken || '',                           // i. ดำเนินการ
+                    data.pointsDeducted || '0',                       // j. ตัดคะเนน (จำนวนคะแนน)
+                    data.guardianName || '',                          // k. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    "'" + formatPhoneNumber(data.studentPhone),       // l. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    "'" + formatPhoneNumber(data.guardianPhone),      // m. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    data.registeredBy || '',                          // n. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    data.position || ''                               // o. ตำแหน่ง
                 ];
 
                 console.log('🔍 Data mapping debug:');
@@ -1618,26 +1723,43 @@
                 // ตรวจสอบความตรงกันของข้อมูล
                 const mappingCheck = {
                     'ประทับเวลา': row[0],
-                    'คำนำหน้า': row[1],
-                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': row[2],
-                    'ชั้น': row[3],
-                    'ห้อง': row[4],
-                    'กรณีที่กระทำความผิด': row[5],
-                    'ว/ด/ป กระทำความผิด': row[6],
-                    'ดำเนินการ': row[7],
-                    'ตัดคะเนน (จำนวนคะแนน)': row[8],
-                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': row[9],
-                    'เบอร์โทรศัพท์': row[10],
-                    'เบอร์โทรผู้ปกครอง': row[11],
-                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': row[12],
-                    'ตำแหน่ง': row[13]
+                    'เลขประจำตัวนักเรียน': row[1],
+                    'คำนำหน้า': row[2],
+                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': row[3],
+                    'ชั้น': row[4],
+                    'ห้อง': row[5],
+                    'กรณีที่กระทำความผิด': row[6],
+                    'ว/ด/ป กระทำความผิด': row[7],
+                    'ดำเนินการ': row[8],
+                    'ตัดคะเนน (จำนวนคะแนน)': row[9],
+                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': row[10],
+                    'เบอร์โทรศัพท์': row[11],
+                    'เบอร์โทรผู้ปกครอง': row[12],
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': row[13],
+                    'ตำแหน่ง': row[14]
                 };
                 console.log('📊 Expected mapping:', mappingCheck);
 
-                const appendResponse = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A:N:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+                // หาแถวถัดไปที่ว่างเพื่อเขียนข้อมูล
+                const existingDataResponse = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A:A`,
                     {
-                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+                
+                const existingDataResult = await existingDataResponse.json();
+                const nextRow = (existingDataResult.values ? existingDataResult.values.length : 0) + 1;
+                
+                console.log('📍 Next available row:', nextRow);
+                console.log('📝 Data to write:', row);
+
+                const appendResponse = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A${nextRow}:O${nextRow}?valueInputOption=RAW`,
+                    {
+                        method: 'PUT',
                         headers: {
                             'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
@@ -1649,8 +1771,14 @@
                 );
 
                 if (!appendResponse.ok) {
+                    const errorData = await appendResponse.json();
+                    console.error('❌ Failed to write data:', errorData);
                     throw new Error(`Failed to append data: ${appendResponse.statusText}`);
                 }
+
+                const result = await appendResponse.json();
+                console.log('✅ Data written successfully to row:', nextRow);
+                console.log('📊 Google Sheets response:', result);
 
                 return { success: true, message: 'บันทึกข้อมูลเรียบร้อยแล้ว' };
             } catch (error) {
@@ -2093,6 +2221,15 @@
         function loadFormData() {
             // โหลดตัวเลือกในฟอร์มต่างๆ
             loadSelectOptions();
+            
+            // โหลดข้อมูลนักศึกษาจาก Google Sheets สำหรับ Auto-complete
+            loadStudentsDatabase().then(result => {
+                if (result.success) {
+                    console.log(`✅ โหลดข้อมูลนักศึกษา ${result.count} คน สำหรับ Auto-complete`);
+                } else {
+                    console.log(`⚠️ ไม่สามารถโหลดข้อมูลนักศึกษาได้: ${result.message}`);
+                }
+            });
         }
 
         // โหลดตัวเลือกในฟอร์ม
@@ -2202,6 +2339,188 @@
             }
         }
 
+        // *** ตัวแปรสำหรับข้อมูลนักศึกษา ***
+        let studentsDatabase = []; // เก็บข้อมูลนักศึกษาจาก Google Sheets
+        // ตัวแปรเก็บ suggestions ปัจจุบัน
+        let currentSuggestions = [];
+        let selectedSuggestionIndex = -1; // สำหรับการใช้ลูกศรเลือก suggestions
+        
+        // *** ฟังก์ชันโหลดข้อมูลนักศึกษาจาก Google Sheets ***
+        async function loadStudentsDatabase() {
+            try {
+                console.log('Loading students database...');
+                
+                // ตรวจสอบว่า GOOGLE_CONFIG มีการตั้งค่า SHEETS.NAME หรือไม่
+                const sheetName = GOOGLE_CONFIG.SHEETS && GOOGLE_CONFIG.SHEETS.NAME ? GOOGLE_CONFIG.SHEETS.NAME : 'name';
+                
+                console.log(`Trying to load from sheet: ${sheetName}`);
+                
+                const result = await readGoogleSheet(sheetName);
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    // แปลงข้อมูลตามโครงสร้างที่คุณบอก 
+                    studentsDatabase = result.data.map(row => {
+                        return {
+                            studentId: row['เลขประจำตัวนักเรียน'] || row['เลขประจำตัวประชาชน'] || '', // ใช้เลขประจำตัวนักเรียนก่อน
+                            prefix: row['คำนำหน้าชื่อ'] || '', // เพิ่ม prefix
+                            name: row['ชื่อ'] || '', 
+                            surname: row['นามสกุล'] || row['สกุล'] || '', 
+                            fullName: `${(row['ชื่อ'] || '')} ${(row['นามสกุล'] || row['สกุล'] || '')}`.trim(),
+                            class: row['ชั้น'] || '',
+                            room: row['ห้อง'] || ''
+                        };
+                    }).filter(student => student.studentId && (student.name || student.fullName));
+                    
+                    console.log(`✅ Loaded ${studentsDatabase.length} students from database`);
+                    console.log('Sample data:', studentsDatabase.slice(0, 3));
+                    
+                    return { success: true, count: studentsDatabase.length };
+                } else {
+                    console.log('⚠️ No student data found or sheet not accessible');
+                    studentsDatabase = [];
+                    return { success: false, message: 'ไม่พบข้อมูลนักศึกษาในฐานข้อมูล' };
+                }
+            } catch (error) {
+                console.error('Error loading students database:', error);
+                studentsDatabase = [];
+                return { success: false, message: error.message };
+            }
+        }
+
+        // *** ฟังก์ชันค้นหานักเรียนสำหรับ Auto-complete ***
+        function searchStudentsForAutocomplete(query) {
+            if (!query || query.length < 2) return [];
+            if (!studentsDatabase || !Array.isArray(studentsDatabase)) return [];
+            
+            const searchTerm = query.toLowerCase();
+            console.log('🔍 Searching in database:', studentsDatabase.length, 'students for term:', searchTerm);
+            
+            try {
+                const results = studentsDatabase.filter(student => {
+                    if (!student) return false;
+                    
+                    const fullName = (student.fullName || '').toLowerCase();
+                    const name = (student.name || '').toLowerCase();
+                    const surname = (student.surname || '').toLowerCase();
+                    const studentId = (student.studentId || '').toLowerCase();
+                    
+                    return fullName.includes(searchTerm) || 
+                           name.includes(searchTerm) || 
+                           surname.includes(searchTerm) ||
+                           studentId.includes(searchTerm);
+                }).slice(0, 10); // แสดงสูงสุด 10 รายการ
+                
+                console.log('🎯 Found', results.length, 'matches:', results);
+                return results;
+            } catch (error) {
+                console.error('Error in searchStudentsForAutocomplete:', error);
+                return [];
+            }
+        }
+
+        // *** ฟังก์ชันแสดง Suggestions ***
+        function showSuggestions(suggestions) {
+            const suggestionsDiv = document.getElementById('studentSuggestions');
+            selectedSuggestionIndex = -1;
+            
+            // เก็บ suggestions ปัจจุบัน
+            currentSuggestions = suggestions || [];
+            
+            // ตรวจสอบว่า suggestions เป็น array หรือไม่
+            if (!suggestions || !Array.isArray(suggestions) || suggestions.length === 0) {
+                suggestionsDiv.innerHTML = '<div class="no-results">ไม่พบข้อมูลนักเรียน</div>';
+                suggestionsDiv.style.display = 'block';
+                return;
+            }
+            
+            const html = suggestions.map((student, index) => `
+                <div class="suggestion-item" data-index="${index}" onclick="selectStudent(${index})" onmouseenter="highlightSuggestion(${index})">
+                    <div class="suggestion-name">${student.fullName}</div>
+                    <div class="suggestion-details">
+                        เลขประจำตัว: <span class="suggestion-id">${student.studentId}</span>
+                        ${student.class ? ` | ชั้น: ${student.class}` : ''}
+                        ${student.room ? ` | ห้อง: ${student.room}` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // *** ฟังก์ชันซ่อน Suggestions ***
+        function hideSuggestions() {
+            setTimeout(() => {
+                document.getElementById('studentSuggestions').style.display = 'none';
+                selectedSuggestionIndex = -1;
+            }, 200);
+        }
+
+        // *** ฟังก์ชัน Highlight Suggestion ***
+        function highlightSuggestion(index) {
+            const suggestions = document.querySelectorAll('.suggestion-item');
+            suggestions.forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+            selectedSuggestionIndex = index;
+        }
+
+        // *** ฟังก์ชันเลือกนักเรียน ***
+        function selectStudent(index) {
+            console.log('🎯 Selecting student at index:', index, 'from suggestions:', currentSuggestions);
+            
+            if (!currentSuggestions || !Array.isArray(currentSuggestions) || index >= currentSuggestions.length || index < 0) {
+                console.error('Invalid student selection:', { index, suggestions: currentSuggestions });
+                return;
+            }
+            
+            const student = currentSuggestions[index];
+            console.log('Selected student data:', student);
+            
+            if (!student) {
+                console.error('Student data is undefined at index:', index);
+                return;
+            }
+            
+            // กรอกข้อมูลในฟอร์ม
+            const studentNameField = document.getElementById('studentName');
+            const studentIdField = document.getElementById('studentId');
+            const prefixField = document.getElementById('studentPrefix');
+            const classField = document.getElementById('studentClass');
+            const roomField = document.getElementById('studentRoom');
+            
+            if (studentNameField) studentNameField.value = student.fullName || '';
+            if (studentIdField) studentIdField.value = student.studentId || '';
+            
+            // กรอกคำนำหน้าจากข้อมูล
+            if (prefixField && student.prefix) {
+                prefixField.value = student.prefix;
+            }
+            
+            // กรอกชั้นเรียน
+            if (classField && student.class) {
+                classField.value = student.class;
+            }
+            
+            // กรอกห้องเรียน
+            if (roomField && student.room) {
+                roomField.value = student.room;
+            }
+            
+            // ซ่อน suggestions
+            hideSuggestions();
+            selectedSuggestionIndex = -1;
+            
+            // แสดงข้อความยืนยัน
+            showAlert('formAlert', `✅ เลือกนักเรียน: ${student.fullName} (เลขประจำตัว: ${student.studentId})`, 'success');
+            
+            console.log('✅ Student data filled successfully');
+        }
+
         // เก็บข้อมูลทั้งหมดไว้ใช้กรอง
         let allStudentsData = [];
         
@@ -2209,6 +2528,88 @@
         let currentPage = 1;
         let itemsPerPage = 10;
         let filteredStudentsData = [];
+
+        // *** Event Listeners สำหรับ Auto-complete ***
+        document.addEventListener('DOMContentLoaded', function() {
+            const studentNameInput = document.getElementById('studentName');
+            const suggestionsDiv = document.getElementById('studentSuggestions');
+            
+            if (studentNameInput) {
+                // Event สำหรับการพิมพ์
+                studentNameInput.addEventListener('input', async function(e) {
+                    const query = e.target.value.trim();
+                    console.log('🔍 Auto-complete search query:', query);
+                    
+                    if (query.length < 2) {
+                        hideSuggestions();
+                        return;
+                    }
+                    
+                    // โหลดข้อมูลนักศึกษาถ้ายังไม่ได้โหลด
+                    if (studentsDatabase.length === 0) {
+                        suggestionsDiv.innerHTML = '<div class="loading-suggestions"><div class="loading" style="display: inline-block; width: 14px; height: 14px; margin-right: 8px;"></div>กำลังโหลดข้อมูล...</div>';
+                        suggestionsDiv.style.display = 'block';
+                        
+                        const loadResult = await loadStudentsDatabase();
+                        if (!loadResult.success) {
+                            suggestionsDiv.innerHTML = '<div class="no-results">ไม่สามารถโหลดข้อมูลได้</div>';
+                            return;
+                        }
+                    }
+                    
+                    // ค้นหาและแสดงผล
+                    const suggestions = searchStudentsForAutocomplete(query);
+                    showSuggestions(suggestions);
+                });
+                
+                // Event สำหรับ keyboard navigation
+                studentNameInput.addEventListener('keydown', function(e) {
+                    const suggestionsDiv = document.getElementById('studentSuggestions');
+                    const suggestions = document.querySelectorAll('.suggestion-item');
+                    
+                    if (suggestionsDiv.style.display === 'none' || suggestions.length === 0) {
+                        return;
+                    }
+                    
+                    switch(e.key) {
+                        case 'ArrowDown':
+                            e.preventDefault();
+                            selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+                            highlightSuggestion(selectedSuggestionIndex);
+                            break;
+                            
+                        case 'ArrowUp':
+                            e.preventDefault();
+                            selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, 0);
+                            highlightSuggestion(selectedSuggestionIndex);
+                            break;
+                            
+                        case 'Enter':
+                            e.preventDefault();
+                            if (selectedSuggestionIndex >= 0) {
+                                selectStudent(selectedSuggestionIndex);
+                            }
+                            break;
+                            
+                        case 'Escape':
+                            hideSuggestions();
+                            break;
+                    }
+                });
+                
+                // Event สำหรับซ่อน suggestions เมื่อ click นอกพื้นที่
+                studentNameInput.addEventListener('blur', hideSuggestions);
+                
+                // Event สำหรับแสดง suggestions เมื่อ focus (ถ้ามีข้อความอยู่แล้ว)
+                studentNameInput.addEventListener('focus', function(e) {
+                    const query = e.target.value.trim();
+                    if (query.length >= 2 && studentsDatabase.length > 0) {
+                        const suggestions = searchStudentsForAutocomplete(query);
+                        showSuggestions(suggestions);
+                    }
+                });
+            }
+        });
 
         // *** ฟังก์ชัน Pagination ***
         function changePage(page) {
@@ -2433,6 +2834,7 @@
                                     </h5>
                                     <div style="line-height: 1.6; font-size: 14px;">
                                         <div><strong>ชื่อ:</strong> ${(student['คำนำหน้า'] || '') + ' ' + (student['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || '')}</div>
+                                        <div><strong>เลขประจำตัวนักเรียน:</strong> ${student['เลขประจำตัวนักเรียน'] || '-'}</div>
                                         <div><strong>ชั้น:</strong> ${student['ชั้น'] || '-'}</div>
                                         <div><strong>ห้อง:</strong> ${student['ห้อง'] || '-'}</div>
                                         <div><strong>เบอร์โทร:</strong> ${student['เบอร์โทรศัพท์'] || '-'}</div>
@@ -2596,6 +2998,7 @@
                             </h3>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; line-height: 1.8;">
                                 <div><strong>ชื่อ-นามสกุล:</strong><br><span style="color: #1f2937; font-size: 16px;">${studentName}</span></div>
+                                <div><strong>เลขประจำตัวนักเรียน:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['เลขประจำตัวนักเรียน'] || '-'}</span></div>
                                 <div><strong>ชั้น:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ชั้น'] || '-'}</span></div>
                                 <div><strong>ห้อง:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['ห้อง'] || '-'}</span></div>
                                 <div><strong>เบอร์โทรศัพท์:</strong><br><span style="color: #1f2937; font-size: 16px;">${record['เบอร์โทรศัพท์'] || '-'}</span></div>
@@ -3332,6 +3735,10 @@
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                             <!-- ข้อมูลนักเรียน -->
                             <div>
+                                <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">เลขประจำตัวนักเรียน:</label>
+                                <input type="text" id="edit-student-id" class="swal2-input" value="${record['เลขประจำตัวนักเรียน'] || ''}" style="margin: 0; width: 100%;" placeholder="เลขประจำตัวนักเรียน">
+                            </div>
+                            <div>
                                 <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">คำนำหน้า:</label>
                                 <select id="edit-prefix" class="swal2-input" style="margin: 0; width: 100%;">
                                     <option value="">เลือกคำนำหน้า</option>
@@ -3341,6 +3748,9 @@
                                     <option value="นางสาว" ${(record['คำนำหน้า'] === 'นางสาว') ? 'selected' : ''}>นางสาว</option>
                                 </select>
                             </div>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
                             <div>
                                 <label style="font-weight: bold; color: #8B0000; margin-bottom: 5px; display: block;">ชื่อ-สกุล:</label>
                                 <input type="text" id="edit-name" class="swal2-input" value="${record['ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)'] || ''}" style="margin: 0; width: 100%;" placeholder="กรอกชื่อ-สกุล">
@@ -3437,6 +3847,7 @@
                 focusConfirm: false,
                 preConfirm: () => {
                     return {
+                        studentId: document.getElementById('edit-student-id').value,
                         prefix: document.getElementById('edit-prefix').value,
                         name: document.getElementById('edit-name').value,
                         class: document.getElementById('edit-class').value,
@@ -3549,21 +3960,21 @@
 
                 // สร้างข้อมูลที่จะอัปเดตตามลำดับคอลัมน์ที่ถูกต้อง
                 const updateData = [
-                    '',                                                                       // a. Form_Response# (ว่างเปล่าเพราะเป็นแค่หัวตาราง)
-                    allStudentsData[index]['ประทับเวลา'] || new Date().toLocaleString('th-TH'), // b. ประทับเวลา (เก็บเวลาเดิม)
-                    formData.prefix,                                                          // c. คำนำหน้า
-                    formData.name,                                                            // d. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
-                    formData.class,                                                           // e. ชั้น
-                    formData.room,                                                            // f. ห้อง
-                    formData.violation,                                                       // g. กรณีที่กระทำความผิด
-                    formData.violationDate,                                                   // h. ว/ด/ป กระทำความผิด
-                    formData.action,                                                          // i. ดำเนินการ
-                    formData.points,                                                          // j. ตัดคะเนน (จำนวนคะแนน)
-                    formData.guardian,                                                        // k. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
-                    "'" + formatPhoneNumber(formData.phone),                                  // l. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    "'" + formatPhoneNumber(formData.guardianPhone),                          // m. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
-                    currentUser ? currentUser.fullName || currentUser.username : 'ระบบ',    // n. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
-                    currentUser ? currentUser.role : 'ผู้ใช้'                                 // o. ตำแหน่ง
+                    allStudentsData[index]['ประทับเวลา'] || new Date().toLocaleString('th-TH'), // a. ประทับเวลา (เก็บเวลาเดิม)
+                    formData.studentId,                                                          // b. เลขประจำตัวนักเรียน
+                    formData.prefix,                                                             // c. คำนำหน้า
+                    formData.name,                                                               // d. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    formData.class,                                                              // e. ชั้น
+                    formData.room,                                                               // f. ห้อง
+                    formData.violation,                                                          // g. กรณีที่กระทำความผิด
+                    formData.violationDate,                                                      // h. ว/ด/ป กระทำความผิด
+                    formData.action,                                                             // i. ดำเนินการ
+                    formData.points,                                                             // j. ตัดคะเนน (จำนวนคะแนน)
+                    formData.guardian,                                                           // k. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    "'" + formatPhoneNumber(formData.phone),                                     // l. เบอร์โทรศัพท์ (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    "'" + formatPhoneNumber(formData.guardianPhone),                             // m. เบอร์โทรผู้ปกครอง (เพิ่ม ' เพื่อบังคับให้เป็น text)
+                    currentUser ? currentUser.fullName || currentUser.username : 'ระบบ',       // n. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    currentUser ? currentUser.role : 'ผู้ใช้'                                    // o. ตำแหน่ง
                 ];
 
                 // อัปเดตใน Google Sheets
@@ -3588,19 +3999,20 @@
                 // อัปเดตข้อมูลใน cache ตามลำดับคอลัมน์ที่ถูกต้อง
                 allStudentsData[index] = {
                     'ประทับเวลา': updateData[0],                           // a. ประทับเวลา
-                    'คำนำหน้า': updateData[1],                             // b. คำนำหน้า
-                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': updateData[2],       // c. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
-                    'ชั้น': updateData[3],                                 // d. ชั้น
-                    'ห้อง': updateData[4],                                 // e. ห้อง
-                    'กรณีที่กระทำความผิด': updateData[5],                   // f. กรณีที่กระทำความผิด
-                    'ว/ด/ป กระทำความผิด': updateData[6],                   // g. ว/ด/ป กระทำความผิด
-                    'ดำเนินการ': updateData[7],                            // h. ดำเนินการ
-                    'ตัดคะเนน (จำนวนคะแนน)': updateData[8],                // i. ตัดคะเนน (จำนวนคะแนน)
-                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': updateData[9],          // j. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
-                    'เบอร์โทรศัพท์': updateData[10],                       // k. เบอร์โทรศัพท์
-                    'เบอร์โทรผู้ปกครอง': updateData[11],                   // l. เบอร์โทรผู้ปกครอง
-                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': updateData[12], // m. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
-                    'ตำแหน่ง': updateData[13]                              // n. ตำแหน่ง
+                    'เลขประจำตัวนักเรียน': updateData[1],                   // b. เลขประจำตัวนักเรียน
+                    'คำนำหน้า': updateData[2],                             // c. คำนำหน้า
+                    'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)': updateData[3],       // d. ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)
+                    'ชั้น': updateData[4],                                 // e. ชั้น
+                    'ห้อง': updateData[5],                                 // f. ห้อง
+                    'กรณีที่กระทำความผิด': updateData[6],                   // g. กรณีที่กระทำความผิด
+                    'ว/ด/ป กระทำความผิด': updateData[7],                   // h. ว/ด/ป กระทำความผิด
+                    'ดำเนินการ': updateData[8],                            // i. ดำเนินการ
+                    'ตัดคะเนน (จำนวนคะแนน)': updateData[9],                // j. ตัดคะเนน (จำนวนคะแนน)
+                    'ข้อมูลผู้ปกครอง (มีคำนำหน้า)': updateData[10],        // k. ข้อมูลผู้ปกครอง (มีคำนำหน้า)
+                    'เบอร์โทรศัพท์': updateData[11],                       // l. เบอร์โทรศัพท์
+                    'เบอร์โทรผู้ปกครอง': updateData[12],                   // m. เบอร์โทรผู้ปกครอง
+                    'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)': updateData[13], // n. ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)
+                    'ตำแหน่ง': updateData[14]                              // o. ตำแหน่ง
                 };
 
                 // รีเฟรชการแสดงผล
@@ -3728,6 +4140,17 @@
                     icon: 'warning',
                     title: 'กรุณาเลือกการดำเนินการ',
                     text: 'โปรดเลือกมาตรการดำเนินการอย่างน้อย 1 ตัวเลือก',
+                    confirmButtonColor: '#8B0000'
+                });
+                return;
+            }
+            
+            // ตรวจสอบว่ามีเลขประจำตัวนักเรียน
+            if (!data.studentId || data.studentId.trim() === '') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณากรอกเลขประจำตัวนักเรียน',
+                    text: 'โปรดกรอกเลขประจำตัวนักเรียนก่อนบันทึกข้อมูล',
                     confirmButtonColor: '#8B0000'
                 });
                 return;
@@ -3870,7 +4293,7 @@
                                        style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 12px;">
                             </div>
                             
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                                 <div>
                                     <label style="display: block; font-weight: bold; margin-bottom: 5px;">ชื่อ Sheet ข้อมูล:</label>
                                     <input type="text" id="settingsDataSheet" value="${currentSettings.DATA_SHEET || 'data'}" 
@@ -3879,6 +4302,11 @@
                                 <div>
                                     <label style="display: block; font-weight: bold; margin-bottom: 5px;">ชื่อ Sheet ผู้ใช้:</label>
                                     <input type="text" id="settingsLoginSheet" value="${currentSettings.LOGIN_SHEET || 'login'}" 
+                                           style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; font-weight: bold; margin-bottom: 5px;">ชื่อ Sheet รายชื่อ:</label>
+                                    <input type="text" id="settingsNameSheet" value="${currentSettings.NAME_SHEET || 'name'}" 
                                            style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                                 </div>
                             </div>
@@ -3933,6 +4361,7 @@
                 PROJECT_ID: localSettings.PROJECT_ID || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.PROJECT_ID : ''),
                 DATA_SHEET: localSettings.DATA_SHEET || (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.SHEETS ? GOOGLE_CONFIG.SHEETS.DATA : 'data'),
                 LOGIN_SHEET: localSettings.LOGIN_SHEET || (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.SHEETS ? GOOGLE_CONFIG.SHEETS.LOGIN : 'login'),
+                NAME_SHEET: localSettings.NAME_SHEET || (typeof GOOGLE_CONFIG !== 'undefined' && GOOGLE_CONFIG.SHEETS ? GOOGLE_CONFIG.SHEETS.NAME : 'name'),
                 CLIENT_EMAIL: localSettings.CLIENT_EMAIL || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.CLIENT_EMAIL : ''),
                 PRIVATE_KEY: localSettings.PRIVATE_KEY || (typeof GOOGLE_CONFIG !== 'undefined' ? GOOGLE_CONFIG.PRIVATE_KEY : '')
             };
@@ -3945,6 +4374,7 @@
                     PROJECT_ID: document.getElementById('settingsProjectId').value.trim(),
                     DATA_SHEET: document.getElementById('settingsDataSheet').value.trim() || 'data',
                     LOGIN_SHEET: document.getElementById('settingsLoginSheet').value.trim() || 'login',
+                    NAME_SHEET: document.getElementById('settingsNameSheet').value.trim() || 'name',
                     CLIENT_EMAIL: document.getElementById('settingsClientEmail').value.trim(),
                     PRIVATE_KEY: document.getElementById('settingsPrivateKey').value.trim()
                 };
@@ -3967,6 +4397,7 @@
                     if (GOOGLE_CONFIG.SHEETS) {
                         GOOGLE_CONFIG.SHEETS.DATA = newSettings.DATA_SHEET;
                         GOOGLE_CONFIG.SHEETS.LOGIN = newSettings.LOGIN_SHEET;
+                        GOOGLE_CONFIG.SHEETS.NAME = newSettings.NAME_SHEET;
                     }
                 }
 

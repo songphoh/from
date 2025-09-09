@@ -629,9 +629,6 @@
                 <button class="btn btn-info" onclick="showSampleData()" id="sampleBtn">
                     👁️ ดูตัวอย่าง
                 </button>
-                <button class="btn btn-success" onclick="testSweetAlert2()" id="testBtn">
-                    🧪 ทดสอบ
-                </button>
             </div>
         </div>
 
@@ -716,9 +713,20 @@
             }
         };
 
-        // Cache สำหรับเก็บ Access Token
+        // Cache สำหรับเก็บ Access Token และ Data
         let accessToken = null;
         let tokenExpiry = null;
+        let dataCache = null;
+        let dataCacheExpiry = null;
+        
+        // กำหนดเวลา Cache (5 นาที)
+        const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+        
+        // ตัวแปรสำหรับตรวจสอบ API Quota
+        let apiCallsCount = 0;
+        let quotaResetTime = Date.now() + (100 * 1000); // 100 วินาที
+        let isQuotaExceeded = false;
+        let quotaExceededUntil = null;
 
         // Initialize application
         document.addEventListener('DOMContentLoaded', function() {
@@ -836,9 +844,27 @@
             return headerB64 + '.' + payloadB64 + '.' + signatureB64;
         }
 
-        // อ่านข้อมูลจาก Google Sheets
+        // อ่านข้อมูลจาก Google Sheets พร้อมตรวจสอบ Quota
         async function readGoogleSheet(sheetName, range = null) {
             try {
+                // ตรวจสอบ Quota ก่อน
+                if (isQuotaExceeded && Date.now() < quotaExceededUntil) {
+                    const waitTime = Math.ceil((quotaExceededUntil - Date.now()) / 1000);
+                    throw new Error(`QUOTA_EXCEEDED:${waitTime}`);
+                }
+                
+                // Reset quota counter ทุก 100 วินาที
+                if (Date.now() > quotaResetTime) {
+                    apiCallsCount = 0;
+                    quotaResetTime = Date.now() + (100 * 1000);
+                    isQuotaExceeded = false;
+                    console.log('🔄 API quota counter reset');
+                }
+                
+                // เพิ่มจำนวน API calls
+                apiCallsCount++;
+                console.log(`📊 API calls: ${apiCallsCount}/100 in current window`);
+                
                 const token = await getServiceAccountToken();
                 
                 const rangeToRead = range || `${sheetName}!A:Z`;
@@ -856,6 +882,12 @@
                 );
 
                 if (!response.ok) {
+                    // ตรวจสอบถ้าเป็น Quota exceeded
+                    if (response.status === 429) {
+                        isQuotaExceeded = true;
+                        quotaExceededUntil = Date.now() + (100 * 1000); // รอ 100 วินาที
+                        throw new Error(`QUOTA_EXCEEDED:100`);
+                    }
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
@@ -879,35 +911,155 @@
                 return { success: true, data: dataRows };
             } catch (error) {
                 console.error('❌ Error reading Google Sheet:', error);
+                
+                // จัดการ Quota exceeded
+                if (error.message.startsWith('QUOTA_EXCEEDED:')) {
+                    const waitTime = parseInt(error.message.split(':')[1]);
+                    return { success: false, message: error.message, quotaError: true, waitTime };
+                }
+                
                 return { success: false, message: error.message };
             }
         }
 
-        // Load all data from API
+        // Load all data from API with caching and quota management
         async function loadAllData() {
             try {
-                console.log('Loading data from Google Sheets...');
+                // ตรวจสอบ Cache ก่อน
+                if (dataCache && dataCacheExpiry && Date.now() < dataCacheExpiry) {
+                    console.log('🗄️ Using cached data');
+                    allStudentsData = dataCache.students;
+                    allViolationsData = dataCache.violations;
+                    return;
+                }
+                
+                console.log('🌐 Loading fresh data from Google Sheets...');
                 
                 const [studentsResult, violationsResult] = await Promise.all([
                     readGoogleSheet(GOOGLE_CONFIG.SHEETS.NAME),
                     readGoogleSheet(GOOGLE_CONFIG.SHEETS.DATA)
                 ]);
 
+                // ตรวจสอบ Quota errors
+                if (studentsResult.quotaError || violationsResult.quotaError) {
+                    const waitTime = Math.max(
+                        studentsResult.waitTime || 0,
+                        violationsResult.waitTime || 0
+                    );
+                    throw new Error(`QUOTA_EXCEEDED:${waitTime}`);
+                }
+
                 if (studentsResult.success && violationsResult.success) {
                     allStudentsData = studentsResult.data || [];
                     allViolationsData = violationsResult.data || [];
+                    
+                    // บันทึกลง Cache
+                    dataCache = {
+                        students: allStudentsData,
+                        violations: allViolationsData
+                    };
+                    dataCacheExpiry = Date.now() + CACHE_DURATION;
 
-                    console.log('✅ Data loaded:', {
+                    console.log('✅ Data loaded and cached:', {
                         students: allStudentsData.length,
-                        violations: allViolationsData.length
+                        violations: allViolationsData.length,
+                        cacheExpiry: new Date(dataCacheExpiry).toLocaleTimeString('th-TH')
                     });
                 } else {
                     throw new Error('Failed to load data from sheets');
                 }
             } catch (error) {
                 console.error('Load data failed:', error);
+                
+                // จัดการ Quota exceeded
+                if (error.message.startsWith('QUOTA_EXCEEDED:')) {
+                    const waitTime = parseInt(error.message.split(':')[1]);
+                    showQuotaExceededMessage(waitTime);
+                    return;
+                }
+                
                 throw error;
             }
+        }
+        
+        // แสดงข้อความเมื่อ API Quota เกิน
+        function showQuotaExceededMessage(waitTimeSeconds) {
+            const minutes = Math.floor(waitTimeSeconds / 60);
+            const seconds = waitTimeSeconds % 60;
+            
+            let timeMessage = '';
+            if (minutes > 0) {
+                timeMessage = `${minutes} นาที ${seconds} วินาที`;
+            } else {
+                timeMessage = `${seconds} วินาที`;
+            }
+            
+            updateConnectionStatus('offline');
+            
+            Swal.fire({
+                icon: 'warning',
+                title: '⏳ ระบบใช้งานเต็มขีดจำกัด',
+                html: `
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⏰</div>
+                        <h4 style="color: #ff9800; margin-bottom: 15px;">Google Sheets API เกินโควต้า</h4>
+                        <p style="margin-bottom: 15px; font-size: 16px;">
+                            ขณะนี้มีผู้ใช้งานจำนวนมาก<br>
+                            กรุณารอประมาณ <strong style="color: #e53935;">${timeMessage}</strong>
+                        </p>
+                        <div style="background: #fff3e0; border-radius: 10px; padding: 15px; margin: 15px 0;">
+                            <h5 style="color: #f57c00; margin-bottom: 10px;">📋 ขณะที่รอ คุณสามารถ:</h5>
+                            <ul style="list-style: none; padding: 0; color: #e65100;">
+                                <li>🔄 รีเฟรชหน้าเว็บในอีก ${timeMessage}</li>
+                                <li>📞 ติดต่อแอดมินหากเร่งด่วน</li>
+                                <li>⭐ ข้อมูลเก่าที่มี (ถ้ามี) ยังใช้ได้</li>
+                            </ul>
+                        </div>
+                        <small style="color: #666;">
+                            ระบบจะพยายามโหลดข้อมูลใหม่อัตโนมัติ<br>
+                            หรือกดปุ่ม "ลองใหม่" ในอีก ${timeMessage}
+                        </small>
+                    </div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: '⏰ ลองใหม่ในภายหลัง',
+                confirmButtonColor: '#ff9800',
+                showCancelButton: true,
+                cancelButtonText: '🔄 ใช้ข้อมูลเก่า (ถ้ามี)',
+                cancelButtonColor: '#2196f3',
+                allowOutsideClick: false,
+                width: '600px',
+                timer: waitTimeSeconds * 1000,
+                timerProgressBar: true
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.timer) {
+                    // Auto refresh when timer ends
+                    window.location.reload();
+                } else if (result.isConfirmed) {
+                    // User clicked "ลองใหม่ในภายหลัง"
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 5000);
+                } else if (result.isDismissed) {
+                    // User clicked "ใช้ข้อมูลเก่า"
+                    if (dataCache) {
+                        allStudentsData = dataCache.students || [];
+                        allViolationsData = dataCache.violations || [];
+                        updateConnectionStatus('online');
+                        Toast.fire({
+                            icon: 'info',
+                            title: 'ใช้ข้อมูลเก่าชั่วคราว'
+                        });
+                    }
+                }
+            });
+            
+            // แสดงข้อความ Toast เพิ่มเติม
+            Toast.fire({
+                icon: 'warning',
+                title: `API เกินโควต้า - รอ ${timeMessage}`,
+                timer: 5000
+            });
         }
 
         // Update connection status
@@ -940,12 +1092,55 @@
             const statusIcon = connectionStatus === 'online' ? 'success' : 
                               connectionStatus === 'offline' ? 'error' : 'info';
             
+            // คำนวณเวลา Cache
+            let cacheInfo = '';
+            if (dataCache && dataCacheExpiry) {
+                const remainingTime = Math.ceil((dataCacheExpiry - Date.now()) / 1000 / 60);
+                cacheInfo = remainingTime > 0 ? 
+                    `<br><small>🗄️ ข้อมูลจาก Cache (เหลือ ${remainingTime} นาที)</small>` :
+                    '<br><small>🔄 กำลังโหลดข้อมูลใหม่...</small>';
+            }
+            
+            // คำนวณ API Quota
+            const quotaRemaining = Math.max(0, 100 - apiCallsCount);
+            const quotaResetIn = Math.max(0, Math.ceil((quotaResetTime - Date.now()) / 1000));
+            
+            // สถานะ Quota
+            let quotaStatus = '';
+            if (isQuotaExceeded) {
+                const waitTime = Math.ceil((quotaExceededUntil - Date.now()) / 1000);
+                quotaStatus = `<p style="color: #e53935;"><strong>🚫 API เกินโควต้า:</strong> รอ ${waitTime} วินาที</p>`;
+            } else if (quotaRemaining <= 10) {
+                quotaStatus = `<p style="color: #ff9800;"><strong>⚠️ API ใกล้เต็ม:</strong> เหลือ ${quotaRemaining} calls</p>`;
+            } else {
+                quotaStatus = `<p style="color: #43a047;"><strong>✅ API ปกติ:</strong> เหลือ ${quotaRemaining}/100 calls</p>`;
+            }
+            
             Swal.fire({
                 title: 'สถานะการเชื่อมต่อ',
-                text: `ระบบอยู่ในสถานะ: ${statusText}`,
+                html: `
+                    <div style="text-align: left; padding: 15px;">
+                        <p><strong>สถานะระบบ:</strong> ${statusText}</p>
+                        <p><strong>ข้อมูลนักเรียน:</strong> ${allStudentsData.length} คน</p>
+                        <p><strong>ข้อมูลการกระทำผิด:</strong> ${allViolationsData.length} รายการ</p>
+                        ${cacheInfo}
+                        <hr style="margin: 15px 0;">
+                        ${quotaStatus}
+                        <p><small>⏰ Quota รีเซ็ตในอีก: ${quotaResetIn} วินาที</small></p>
+                        <hr style="margin: 15px 0;">
+                        <h4>📊 ข้อจำกัด Google Sheets API:</h4>
+                        <ul style="font-size: 14px; margin: 10px 0;">
+                            <li>🔄 <strong>100 requests/100 วินาที</strong></li>
+                            <li>🕐 <strong>Cache 5 นาที</strong> (ลด API calls)</li>
+                            <li>⚡ <strong>ค้นหาแบบ Local</strong> (ไม่ใช้ API)</li>
+                            <li>🎯 <strong>แจ้งเตือนเมื่อเกินโควต้า</strong></li>
+                        </ul>
+                    </div>
+                `,
                 icon: statusIcon,
                 confirmButtonText: 'ปิด',
-                confirmButtonColor: '#3949ab'
+                confirmButtonColor: '#3949ab',
+                width: '500px'
             });
         }
 
@@ -1364,32 +1559,6 @@
                 });
             }
         }
-        
-        // ฟังก์ชันทดสอบ SweetAlert2
-        function testSweetAlert2() {
-            console.log('🧪 Testing SweetAlert2 directly...');
-            
-            if (typeof Swal === 'undefined') {
-                alert('❌ SweetAlert2 library not loaded!');
-                return;
-            }
-            
-            Swal.fire({
-                title: '🧪 ทดสอบ SweetAlert2',
-                html: `
-                    <div style="text-align: left; padding: 20px;">
-                        <h4>✅ SweetAlert2 ทำงานได้ปกติ!</h4>
-                        <p>หากคุณเห็น popup นี้ แสดงว่า SweetAlert2 พร้อมใช้งาน</p>
-                        <hr style="margin: 15px 0;">
-                        <small>หากระบบค้นหายังไม่ทำงาน อาจมีปัญหาในส่วนอื่น</small>
-                    </div>
-                `,
-                icon: 'success',
-                confirmButtonText: 'เข้าใจแล้ว',
-                confirmButtonColor: '#3949ab',
-                width: '500px'
-            });
-        }
 
         // Get points class for styling
         function getPointsClass(points) {
@@ -1488,14 +1657,18 @@
                 }
             });
 
-            // Auto-refresh every 10 minutes
+            // Auto-refresh every 10 minutes (เฉพาะเมื่อ Cache หมดอายุ)
             setInterval(() => {
-                if (connectionStatus === 'online') {
+                if (connectionStatus === 'online' && (!dataCacheExpiry || Date.now() >= dataCacheExpiry)) {
+                    console.log('🔄 Cache expired, refreshing data...');
                     loadAllData().then(() => {
                         console.log('🔄 Data auto-refreshed');
                     }).catch(error => {
                         console.warn('Auto-refresh failed:', error);
                     });
+                } else if (dataCacheExpiry) {
+                    const remainingTime = Math.ceil((dataCacheExpiry - Date.now()) / 1000 / 60);
+                    console.log(`⏰ Cache valid for ${remainingTime} more minutes`);
                 }
             }, 10 * 60 * 1000); // 10 minutes
         }

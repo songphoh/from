@@ -1647,7 +1647,7 @@
 
                 const existingResult = await existingData.json();
 
-                // กำหนด headers สำหรับ sheet data ตามลำดับที่ถูกต้อง
+                // กำหนด headers สำหรับ sheet data ตามลำดับที่ถูกต้อง (ไม่รวมลำดับและหมายเลขอ้างอิง)
                 const headers = [
                     'ประทับเวลา', 'เลขประจำตัวนักเรียน', 'คำนำหน้า', 'ชื่อ-สกุล (ไม่ต้องใส่คำนำหน้า)', 'ชั้น', 'ห้อง', 
                     'กรณีที่กระทำความผิด', 'ว/ด/ป กระทำความผิด', 'ดำเนินการ', 
@@ -1655,10 +1655,10 @@
                     'ชื่อ-สกุล ผู้ลงทะเบียน (มีคำนำหน้า)', 'ตำแหน่ง'
                 ];
 
-                // ถ้าไม่มี header ให้เพิ่ม
+                // ถ้าไม่มี header ให้เพิ่ม (ตรวจสอบช่วงที่กว้างขึ้น)
                 if (!existingResult.values || existingResult.values.length === 0) {
                     await fetch(
-                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:O1?valueInputOption=RAW`,
+                        `https://sheets.googleapis.com/v4/spreadsheets/${GOOGLE_CONFIG.SHEET_ID}/values/${targetSheet}!A1:Q1?valueInputOption=RAW`,
                         {
                             method: 'PUT',
                             headers: {
@@ -1692,7 +1692,7 @@
                     return cleanPhone.startsWith('0') ? cleanPhone : ('0' + cleanPhone);
                 }
 
-                // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง (เริ่มจากคอลัมน์ A = ประทับเวลา)
+                // เพิ่มข้อมูลใหม่ตามลำดับคอลัมน์ที่ถูกต้อง (ไม่รวมลำดับและหมายเลขอ้างอิง)
                 const row = [
                     new Date().toLocaleString('th-TH'),               // a. ประทับเวลา  
                     data.studentId || '',                             // b. เลขประจำตัวนักเรียน
@@ -4198,6 +4198,21 @@
             submitBtn.innerHTML = '<span class="loading"></span> กำลังบันทึก...';
             
             try {
+                console.log('Attempting to write data to Google Sheets...');
+                
+                // โหลดข้อมูลปัจจุบันเพื่อหาลำดับล่าสุด
+                const currentDataResult = await readGoogleSheet(GOOGLE_CONFIG.SHEETS.DATA);
+                let recordNumber = 1;
+                
+                if (currentDataResult.success && currentDataResult.data) {
+                    recordNumber = currentDataResult.data.length + 1;
+                    console.log(`📊 Current records count: ${currentDataResult.data.length}, New record will be #${recordNumber}`);
+                }
+                
+                // เพิ่มลำดับการบันทึกในข้อมูล
+                data.recordNumber = recordNumber;
+                data.orderNumber = `#${recordNumber.toString().padStart(4, '0')}`; // Format เป็น #0001, #0002, etc.
+                
                 // ส่งข้อมูลไป Google Sheets API
                 const result = await writeToGoogleSheet(data);
                 
@@ -4205,16 +4220,55 @@
                 submitBtn.innerHTML = '💾 บันทึกการกระทำผิด';
                 
                 if (result.success) {
+                    // รีเซ็ตฟอร์มก่อน
+                    document.getElementById('studentForm').reset();
+                    
+                    // แสดงข้อความสำเร็จพร้อมลำดับ
                     Swal.fire({
                         icon: 'success',
-                        title: 'บันทึกสำเร็จ!',
-                        text: 'บันทึกข้อมูลการกระทำผิดเรียบร้อยแล้ว',
-                        timer: 2000,
-                        showConfirmButton: false,
-                        iconColor: '#059669'
-                    }).then(() => {
-                        document.getElementById('studentForm').reset();
+                        title: '🎉 บันทึกข้อมูลสำเร็จ!',
+                        html: `
+                            <div style="text-align: center; padding: 20px;">
+                                <div style="background: linear-gradient(135deg, #43a047, #66bb6a); color: white; border-radius: 15px; padding: 25px; margin: 15px 0; box-shadow: 0 4px 12px rgba(67, 160, 71, 0.3);">
+                                    <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
+                                    <h3 style="margin: 0; font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">เพิ่มแถวที่ ${recordNumber}</h3>
+                                    <p style="margin: 10px 0; font-size: 16px; opacity: 0.9;">ข้อมูลการกระทำผิดถูกบันทึกเรียบร้อยแล้ว</p>
+                                </div>
+                                
+                                <div style="background: #f8f9ff; border-radius: 15px; padding: 20px; margin: 15px 0; text-align: left; border: 2px solid rgba(25, 118, 210, 0.1);">
+                                    <h4 style="color: #1976d2; margin-bottom: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                                        📄 รายละเอียดที่บันทึก
+                                    </h4>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                                        <p><strong>👤 นักเรียน:</strong> ${data.studentName || '-'}</p>
+                                        <p><strong>🆔 เลขประจำตัว:</strong> ${data.studentId || '-'}</p>
+                                        <p><strong>🚫 การกระทำผิด:</strong> ${data.violationType || '-'}</p>
+                                        <p><strong>📅 วันที่บันทึก:</strong> ${data.timestamp || '-'}</p>
+                                        <p style="grid-column: 1 / -1;"><strong>👨‍💼 ผู้บันทึก:</strong> ${data.registeredBy || '-'}</p>
+                                    </div>
+                                </div>
+                                
+                                <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-radius: 15px; padding: 20px; margin: 15px 0; border: 2px solid rgba(46, 125, 50, 0.2);">
+                                    <div style="text-align: center; margin-bottom: 10px;">
+                                        <span style="font-size: 32px;">✅</span>
+                                    </div>
+                                    <p style="color: #2e7d32; margin: 5px 0; font-size: 14px; text-align: center; line-height: 1.5;">
+                                        <strong>ข้อมูลได้รับการบันทึกลงใน Google Sheets แล้ว</strong><br>
+                                        🔍 สามารถค้นหาและตรวจสอบได้ในหน้าค้นหาข้อมูล<br>
+                                        📊 รวมข้อมูลทั้งหมด: ${recordNumber} รายการ
+                                    </p>
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: '✨ เรียบร้อย',
+                        confirmButtonColor: '#43a047',
+                        width: '650px',
+                        showCloseButton: true,
+                        timer: 8000,
+                        timerProgressBar: true,
+                        allowOutsideClick: false
                     });
+                    
                 } else {
                     Swal.fire({
                         icon: 'error',
